@@ -1,0 +1,23 @@
+[package]
+name = "ledger"
+version = "0.1.0"
+authors = ["DemonusPC <andrzej.pogonowski@bbc.co.uk>"]
+edition = "2018"
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+serde = "1.0.69"
+serde_json = "1.0.22"
+serde_derive = "1.0.69"
+json = "*"
+
+
+actix-web = "1.0.0"
+futures = "0.1.22"
+log = "0.4.3"
+env_logger = "0.7.0"
+
+
+[dependencies.rusqlite]
+version = "0.20.0"
+features = ["bundled", "chrono"]
