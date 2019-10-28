@@ -53,7 +53,7 @@ fn main() -> io::Result<()> {
                 )
                 .service(
                     web::resource("/{id}/detail")
-                        .route(web::get().to_async(api::get_transaction))
+                        .route(web::get().to_async(api::get_transaction_detail))
                 )
             )
             .service(web::scope("/account")

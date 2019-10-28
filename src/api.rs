@@ -56,6 +56,15 @@ pub fn get_transaction(params: web::Path<datastruct::IdRequest>) -> impl Future<
     } 
 }
 
+pub fn get_transaction_detail(params: web::Path<datastruct::IdRequest>) -> impl Future<Item = HttpResponse, Error = Error> {
+    let result = db::get_transaction(params.id);
+
+    match result {
+        Ok(v) => ok(HttpResponse::Ok().json(v)),
+        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    } 
+}
+
 pub fn get_account(params: web::Path<datastruct::IdRequest>) -> impl Future<Item = HttpResponse, Error = Error> {
     let result = db::get_account_by_id(params.id);
 
