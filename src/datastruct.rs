@@ -61,6 +61,14 @@ pub struct Transaction {
 }
 
 #[derive(Debug, Serialize)]
+pub struct Entry {
+    pub id: i32,
+    pub account: i32,
+    pub transaction_id: i32,
+    pub balance: f64
+}
+
+#[derive(Debug, Serialize)]
 pub struct SqlResult {
     pub value: f64
 }

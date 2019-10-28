@@ -1,5 +1,5 @@
 use rusqlite::{Connection, Result, params, NO_PARAMS};
-use crate::datastruct::{Account, AccountType, Transaction, SqlResult};
+use crate::datastruct::{Account, AccountType, Transaction, SqlResult, Entry};
 
 use chrono::{DateTime, Utc};
 
@@ -167,5 +167,34 @@ pub fn current_balance(account : i32 ) -> Result<(SqlResult)> {
     }))
 
 }
+
+pub fn get_debit(id : i32) -> Result<(Entry)> {
+    let conn = Connection::open("ledger.db")?;
+    let mut stmt = conn.prepare("SELECT id, account, transaction_id, balance from Debits WHERE transaction_id = ?1;")?;
+
+
+    stmt.query_row(params![id], |row|
+       Ok(Entry {
+           id: row.get(0).unwrap(),
+           account: row.get(1).unwrap(),
+           transaction_id: row.get(2).unwrap(),
+           balance: row.get(2).unwrap(),
+       }))
+}
+
+pub fn get_credit(id : i32) -> Result<(Entry)> {
+    let conn = Connection::open("ledger.db")?;
+    let mut stmt = conn.prepare("SELECT id, account, transaction_id, balance from Credits WHERE transaction_id = ?1;")?;
+
+
+    stmt.query_row(params![id], |row|
+       Ok(Entry {
+           id: row.get(0).unwrap(),
+           account: row.get(1).unwrap(),
+           transaction_id: row.get(2).unwrap(),
+           balance: row.get(2).unwrap(),
+       }))
+}
+
 
 // SELECT t.date, t.name,  c.account as "from", c.balance as "Credit", d.account as "to",  d.balance as "Debit" FROM Transactions as t LEFT JOIN Debits as d ON d.transaction_id = t.id LEFT JOIN Credits as c ON c.transaction_id = t.id WHERE t.id = 8;
