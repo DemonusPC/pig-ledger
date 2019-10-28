@@ -3,6 +3,7 @@ use futures::future::{Future};
 
 use futures::{future::ok};
 
+use serde_json::json;
 
 
 use crate::db;
@@ -54,6 +55,26 @@ pub fn get_transaction(params: web::Path<datastruct::IdRequest>) -> impl Future<
         Ok(v) => ok(HttpResponse::Ok().json(v)),
         Err(_e) => ok(HttpResponse::InternalServerError().finish()),
     } 
+}
+
+
+pub fn get_transaction_detail(params: web::Path<datastruct::IdRequest>) -> impl Future<Item = HttpResponse, Error = Error> {
+    let transaction = db::get_transaction(params.id);
+    let debit = db::get_debit(params.id);
+    let credit = db::get_credit(params.id);
+
+    if transaction.is_err() || debit.is_err() || credit.is_err() {
+        return ok(HttpResponse::InternalServerError().finish());
+    }
+
+    let result = json!({
+        "transaction": transaction.unwrap(),
+        "debit": debit.unwrap(),
+        "credit": credit.unwrap()
+    });
+
+
+    ok(HttpResponse::Ok().json(result))
 }
 
 pub fn get_account(params: web::Path<datastruct::IdRequest>) -> impl Future<Item = HttpResponse, Error = Error> {
