@@ -51,6 +51,10 @@ fn main() -> io::Result<()> {
                         .route(web::get().to_async(api::get_transaction))
                         .route(web::delete().to_async(api::delete_transaction)),
                 )
+                .service(
+                    web::resource("/{id}/detail")
+                        .route(web::get().to_async(api::get_transaction))
+                )
             )
             .service(web::scope("/account")
                 .service(web::resource("/").route(web::post().to_async(api::create_account)))
