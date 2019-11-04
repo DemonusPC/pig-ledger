@@ -2,6 +2,7 @@ use rusqlite::{Connection, Result, params, NO_PARAMS};
 use crate::datastruct::{Account, AccountType, Transaction, SqlResult, Entry};
 
 use chrono::{DateTime, Utc};
+use std::ops::DerefMut;
 
 pub fn list_accounts(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>) -> Result<(Vec<Account>)> {
     let mut stmt = conn.prepare("SELECT id, type, name from Accounts")?;
@@ -40,8 +41,7 @@ pub fn list_transactions() -> Result<(Vec<Transaction>)> {
     Ok(transactions)
 }
 
-pub fn get_account(account : &str) -> Result<(Account)> {
-    let conn = Connection::open("ledger.db")?;
+pub fn get_account(account : &str, conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>) -> Result<(Account)> {
     let mut stmt = conn.prepare("SELECT id, type, name FROM Accounts WHERE name = ?1")?;
 
 
@@ -53,10 +53,8 @@ pub fn get_account(account : &str) -> Result<(Account)> {
         }))
 }
 
-pub fn get_account_by_id(id : i32) -> Result<(Account)> {
-    let conn = Connection::open("ledger.db")?;
+pub fn get_account_by_id(id : i32, conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>) -> Result<(Account)> {
     let mut stmt = conn.prepare("SELECT id, type, name FROM Accounts WHERE id = ?1")?;
-
 
     stmt.query_row(params![id], |row|
        Ok(Account {
@@ -109,10 +107,9 @@ pub fn remove_account_by_id(id : i32) -> Result<()> {
     tx.commit()
 }
 
-pub fn transaction(debit_account : i32, credit_account : i32, balance : f64, name: &str) -> Result<()> {
-    let mut conn = Connection::open("ledger.db")?;
-    let tx = conn.transaction()?;
-
+pub fn transaction(debit_account : i32, credit_account : i32, balance : f64, name: &str, mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
     let date : DateTime<Utc> = Utc::now(); 
 
     tx.execute("INSERT INTO Transactions (date, name) VALUES (?1, ?2)", params![date, name])?;

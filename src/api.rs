@@ -31,11 +31,11 @@ pub fn list_transactions() -> impl Future<Item = HttpResponse, Error = Error> {
     }   
 }
 
-pub fn create_transaction(transaction: web::Json<datastruct::NewTransaction>) -> impl Future<Item = HttpResponse, Error = Error> {
-    let from_account = db::get_account(&transaction.from).unwrap();
-    let to_account = db::get_account(&transaction.to).unwrap();
+pub fn create_transaction(transaction: web::Json<datastruct::NewTransaction>, db: web::Data<Pool<SqliteConnectionManager>>) -> impl Future<Item = HttpResponse, Error = Error> {
+    let from_account = db::get_account(&transaction.from, db.get().unwrap()).unwrap();
+    let to_account = db::get_account(&transaction.to, db.get().unwrap()).unwrap();
 
-    let result = db::transaction(to_account.id, from_account.id, transaction.balance, &transaction.name);
+    let result = db::transaction(to_account.id, from_account.id, transaction.balance, &transaction.name, db.get().unwrap());
 
     match result {
         Ok(_v) => ok(HttpResponse::Ok().finish()),
@@ -81,8 +81,9 @@ pub fn get_transaction_detail(params: web::Path<datastruct::IdRequest>) -> impl 
     ok(HttpResponse::Ok().json(result))
 }
 
-pub fn get_account(params: web::Path<datastruct::IdRequest>) -> impl Future<Item = HttpResponse, Error = Error> {
-    let result = db::get_account_by_id(params.id);
+pub fn get_account(params: web::Path<datastruct::IdRequest>,  db: web::Data<Pool<SqliteConnectionManager>>) -> impl Future<Item = HttpResponse, Error = Error> {
+    let conn = db.get().unwrap();
+    let result = db::get_account_by_id(params.id, conn);
 
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
