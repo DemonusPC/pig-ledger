@@ -27,7 +27,9 @@ use std::{io};
 
 
 use actix_web::middleware::{Logger};
-use actix_web::{web, middleware, App, HttpServer};
+use actix_web::{web, App, HttpServer};
+
+use r2d2_sqlite::SqliteConnectionManager;
 
 
 use env_logger;
@@ -37,11 +39,15 @@ fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
+    let manager = SqliteConnectionManager::file("ledger.db");
+    let pool = r2d2::Pool::new(manager).unwrap();
+
     let app = move || {
         debug!("Constructing the App");
 
         App::new()
             .wrap(Logger::default())
+            .data(pool.clone())
             .service(web::resource("/").route(web::get().to_async(api::index)))
             .service(web::resource("/transactions").route(web::get().to_async(api::list_transactions)))
             .service(web::scope("/transaction")

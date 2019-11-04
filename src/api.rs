@@ -5,12 +5,16 @@ use futures::{future::ok};
 
 use serde_json::json;
 
+use r2d2::Pool;
+use r2d2_sqlite::SqliteConnectionManager;
+
 
 use crate::db;
 use crate::datastruct;
 
-pub fn index() -> impl Future<Item = HttpResponse, Error = Error> {
-    let result = db::list_accounts();
+pub fn index(db: web::Data<Pool<SqliteConnectionManager>>) -> impl Future<Item = HttpResponse, Error = Error> {
+    let conn = db.get().unwrap();
+    let result = db::list_accounts(conn);
 
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),

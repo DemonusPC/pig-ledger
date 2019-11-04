@@ -3,8 +3,7 @@ use crate::datastruct::{Account, AccountType, Transaction, SqlResult, Entry};
 
 use chrono::{DateTime, Utc};
 
-pub fn list_accounts() -> Result<(Vec<Account>)> {
-    let conn = Connection::open("ledger.db")?;
+pub fn list_accounts(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>) -> Result<(Vec<Account>)> {
     let mut stmt = conn.prepare("SELECT id, type, name from Accounts")?;
 
     let accounts = stmt.query_map(NO_PARAMS, |row|
