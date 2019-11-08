@@ -20,3 +20,12 @@ cargo build
 ```
 cargo run
 ```
+
+## Test
+TBD
+
+## Linting
+
+```
+cargo fmt
+```
