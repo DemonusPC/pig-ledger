@@ -24,6 +24,7 @@ extern crate log;
 
 use std::io;
 
+use actix_cors::Cors;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 
@@ -43,6 +44,12 @@ fn main() -> io::Result<()> {
 
         App::new()
             .wrap(Logger::default())
+            .wrap(
+                Cors::new()
+                    .allowed_origin("*")
+                    .allowed_methods(vec!["GET", "POST", "DELETE"])
+                    .max_age(3600),
+            )
             .data(pool.clone())
             .service(web::resource("/").route(web::get().to_async(api::index)))
             .service(
