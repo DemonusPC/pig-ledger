@@ -2,9 +2,9 @@ use rusqlite::{Connection, Result, params, NO_PARAMS};
 use crate::datastruct::{Account, AccountType, Transaction, SqlResult, Entry};
 
 use chrono::{DateTime, Utc};
+use std::ops::DerefMut;
 
-pub fn list_accounts() -> Result<(Vec<Account>)> {
-    let conn = Connection::open("ledger.db")?;
+pub fn list_accounts(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>) -> Result<(Vec<Account>)> {
     let mut stmt = conn.prepare("SELECT id, type, name from Accounts")?;
 
     let accounts = stmt.query_map(NO_PARAMS, |row|
@@ -41,8 +41,7 @@ pub fn list_transactions() -> Result<(Vec<Transaction>)> {
     Ok(transactions)
 }
 
-pub fn get_account(account : &str) -> Result<(Account)> {
-    let conn = Connection::open("ledger.db")?;
+pub fn get_account(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, account : &str) -> Result<(Account)> {
     let mut stmt = conn.prepare("SELECT id, type, name FROM Accounts WHERE name = ?1")?;
 
 
@@ -54,10 +53,8 @@ pub fn get_account(account : &str) -> Result<(Account)> {
         }))
 }
 
-pub fn get_account_by_id(id : i32) -> Result<(Account)> {
-    let conn = Connection::open("ledger.db")?;
+pub fn get_account_by_id(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, id : i32) -> Result<(Account)> {
     let mut stmt = conn.prepare("SELECT id, type, name FROM Accounts WHERE id = ?1")?;
-
 
     stmt.query_row(params![id], |row|
        Ok(Account {
@@ -67,8 +64,7 @@ pub fn get_account_by_id(id : i32) -> Result<(Account)> {
         }))
 }
 
-pub fn get_transaction(id : i32) -> Result<(Transaction)> {
-    let conn = Connection::open("ledger.db")?;
+pub fn get_transaction(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, id : i32) -> Result<(Transaction)> {
     let mut stmt = conn.prepare("SELECT id, date, name from Transactions WHERE id = ?1")?;
 
 
@@ -80,40 +76,36 @@ pub fn get_transaction(id : i32) -> Result<(Transaction)> {
        }))
 }
 
-pub fn add_account(acc_type : AccountType, name : &str) -> Result<()> {
-    let mut conn = Connection::open("ledger.db")?;
-
-    let tx = conn.transaction()?;
+pub fn add_account(mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, acc_type : AccountType, name : &str) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
 
     tx.execute("INSERT INTO Accounts (Type, Name) VALUES (?1, ?2)", params![acc_type as i32, name])?;
 
     tx.commit()
 }
 
-pub fn remove_account(name : &str) -> Result<()> {
-    let mut conn = Connection::open("ledger.db")?;
-
-    let tx = conn.transaction()?;
+pub fn remove_account(mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, name : &str) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
 
     tx.execute("DELETE FROM Accounts WHERE Name = ?1", params![name])?;
 
     tx.commit()
 }
 
-pub fn remove_account_by_id(id : i32) -> Result<()> {
-    let mut conn = Connection::open("ledger.db")?;
-
-    let tx = conn.transaction()?;
+pub fn remove_account_by_id(mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, id : i32) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
 
     tx.execute("DELETE FROM Accounts WHERE id = ?1", params![id])?;
 
     tx.commit()
 }
 
-pub fn transaction(debit_account : i32, credit_account : i32, balance : f64, name: &str) -> Result<()> {
-    let mut conn = Connection::open("ledger.db")?;
-    let tx = conn.transaction()?;
-
+pub fn transaction(mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, debit_account : i32, credit_account : i32, balance : f64, name: &str) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
     let date : DateTime<Utc> = Utc::now(); 
 
     tx.execute("INSERT INTO Transactions (date, name) VALUES (?1, ?2)", params![date, name])?;
@@ -126,9 +118,9 @@ pub fn transaction(debit_account : i32, credit_account : i32, balance : f64, nam
     tx.commit()
 }
 
-pub fn remove_transaction(id : i32) -> Result<()> {
-    let mut conn = Connection::open("ledger.db")?;
-    let tx = conn.transaction()?;
+pub fn remove_transaction(mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, id : i32) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
 
     tx.execute("DELETE FROM Transactions WHERE id = ?1", params![id])?;
     
@@ -136,8 +128,7 @@ pub fn remove_transaction(id : i32) -> Result<()> {
 }
 
 // SELECT SUM(c.balance) - SUM(d.balance) FROM Credits as c, Debits as d;
-pub fn check_integrity() -> Result<bool> {
-    let conn = Connection::open("ledger.db")?;
+pub fn check_integrity(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>) -> Result<bool> {
     let mut stmt = conn.prepare("SELECT SUM(c.balance) - SUM(d.balance) FROM Credits as c, Debits as d")?;
 
     let query = stmt.query_map(NO_PARAMS, |row|
@@ -156,9 +147,7 @@ pub fn check_integrity() -> Result<bool> {
     Ok(result)
 }
 
-pub fn current_balance(account : i32 ) -> Result<(SqlResult)> {
-    let conn = Connection::open("ledger.db")?;
-    
+pub fn current_balance(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, account : i32 ) -> Result<(SqlResult)> {
     let mut stmt = conn.prepare("SELECT (SELECT ifnull(SUM(balance),0) as \"Debits\" FROM Debits WHERE account = ?1) - (SELECT ifnull(SUM(balance),0) as \"Credits\" FROM Credits WHERE account = ?1)")?;
     
     stmt.query_row(params![account], |row|
@@ -168,8 +157,7 @@ pub fn current_balance(account : i32 ) -> Result<(SqlResult)> {
 
 }
 
-pub fn get_debit(id : i32) -> Result<(Entry)> {
-    let conn = Connection::open("ledger.db")?;
+pub fn get_debit(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, id : i32) -> Result<(Entry)> {
     let mut stmt = conn.prepare("SELECT id, account, transaction_id, balance from Debits WHERE transaction_id = ?1;")?;
 
 
@@ -182,8 +170,7 @@ pub fn get_debit(id : i32) -> Result<(Entry)> {
        }))
 }
 
-pub fn get_credit(id : i32) -> Result<(Entry)> {
-    let conn = Connection::open("ledger.db")?;
+pub fn get_credit(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, id : i32) -> Result<(Entry)> {
     let mut stmt = conn.prepare("SELECT id, account, transaction_id, balance from Credits WHERE transaction_id = ?1;")?;
 
 
