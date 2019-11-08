@@ -13,6 +13,7 @@ json = "*"
 
 
 actix-web = "1.0.0"
+actix-cors = "0.1.0"
 futures = "0.1.22"
 log = "0.4.3"
 env_logger = "0.7.0"
