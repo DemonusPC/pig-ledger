@@ -12,8 +12,8 @@ use r2d2_sqlite::SqliteConnectionManager;
 use crate::db;
 use crate::datastruct;
 
-pub fn index(db: web::Data<Pool<SqliteConnectionManager>>) -> impl Future<Item = HttpResponse, Error = Error> {
-    let conn = db.get().unwrap();
+pub fn index(pool: web::Data<Pool<SqliteConnectionManager>>) -> impl Future<Item = HttpResponse, Error = Error> {
+    let conn = pool.get().unwrap();
     let result = db::list_accounts(conn);
 
     match result {
@@ -81,8 +81,8 @@ pub fn get_transaction_detail(params: web::Path<datastruct::IdRequest>, pool: we
     ok(HttpResponse::Ok().json(result))
 }
 
-pub fn get_account(params: web::Path<datastruct::IdRequest>,  db: web::Data<Pool<SqliteConnectionManager>>) -> impl Future<Item = HttpResponse, Error = Error> {
-    let conn = db.get().unwrap();
+pub fn get_account(params: web::Path<datastruct::IdRequest>,  pool: web::Data<Pool<SqliteConnectionManager>>) -> impl Future<Item = HttpResponse, Error = Error> {
+    let conn = pool.get().unwrap();
     let result = db::get_account_by_id(conn, params.id);
 
     match result {
