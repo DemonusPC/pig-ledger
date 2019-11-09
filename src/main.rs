@@ -44,12 +44,7 @@ fn main() -> io::Result<()> {
 
         App::new()
             .wrap(Logger::default())
-            .wrap(
-                Cors::new()
-                    .allowed_origin("*")
-                    .allowed_methods(vec!["GET", "POST", "DELETE"])
-                    .max_age(3600),
-            )
+            .wrap(Cors::new().send_wildcard().max_age(3600))
             .data(pool.clone())
             .service(web::resource("/").route(web::get().to_async(api::index)))
             .service(
