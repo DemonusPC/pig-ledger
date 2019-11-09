@@ -224,7 +224,7 @@ pub fn get_debit(
             id: row.get(0).unwrap(),
             account: row.get(1).unwrap(),
             transaction_id: row.get(2).unwrap(),
-            balance: row.get(2).unwrap(),
+            balance: row.get(3).unwrap(),
         })
     })
 }
@@ -242,7 +242,7 @@ pub fn get_credit(
             id: row.get(0).unwrap(),
             account: row.get(1).unwrap(),
             transaction_id: row.get(2).unwrap(),
-            balance: row.get(2).unwrap(),
+            balance: row.get(3).unwrap(),
         })
     })
 }
