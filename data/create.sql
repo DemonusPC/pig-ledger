@@ -27,3 +27,11 @@ CREATE TABLE "Transactions" (
 	"date"	TEXT NOT NULL,
 	"name"	TEXT
 )
+
+CREATE TABLE "Currency" (
+	"code"	TEXT NOT NULL UNIQUE,
+	"numeric_code"	INTEGER NOT NULL UNIQUE,
+	"minor_unit"	INTEGER DEFAULT 2,
+	"name"	TEXT NOT NULL UNIQUE,
+	PRIMARY KEY("code")
+)
