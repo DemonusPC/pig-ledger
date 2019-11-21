@@ -31,7 +31,7 @@ CREATE TABLE "Transactions" (
 CREATE TABLE "Currency" (
 	"code"	TEXT NOT NULL UNIQUE,
 	"numeric_code"	INTEGER NOT NULL UNIQUE,
-	"minor_unit"	INTEGER DEFAULT 2,
+	"minor_unit"	INTEGER NOT NULL DEFAULT 2,
 	"name"	TEXT NOT NULL UNIQUE,
 	PRIMARY KEY("code")
 )
