@@ -147,3 +147,15 @@ pub fn get_account_balance(
         Err(_e) => ok(HttpResponse::InternalServerError().finish()),
     }
 }
+
+pub fn list_currencies(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let conn = pool.get().unwrap();
+    let result = db::list_currencies(conn);
+
+    match result {
+        Ok(v) => ok(HttpResponse::Ok().json(v)),
+        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    }
+}
