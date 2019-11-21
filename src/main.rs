@@ -51,6 +51,9 @@ fn main() -> io::Result<()> {
                 web::resource("/transactions").route(web::get().to_async(api::list_transactions)),
             )
             .service(
+                web::resource("/currencies").route(web::get().to_async(api::list_currencies)),
+            )
+            .service(
                 web::scope("/transaction")
                     .service(
                         web::resource("/").route(web::post().to_async(api::create_transaction)),
