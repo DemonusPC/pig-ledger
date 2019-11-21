@@ -1,4 +1,4 @@
-use crate::datastruct::{Account, AccountType, Entry, SqlResult, Transaction};
+use crate::datastruct::{Account, AccountType, Entry, SqlResult, Transaction, Currency};
 use rusqlite::{params, Connection, Result, NO_PARAMS};
 
 use chrono::{DateTime, Utc};
@@ -248,3 +248,26 @@ pub fn get_credit(
 }
 
 // SELECT t.date, t.name,  c.account as "from", c.balance as "Credit", d.account as "to",  d.balance as "Debit" FROM Transactions as t LEFT JOIN Debits as d ON d.transaction_id = t.id LEFT JOIN Credits as c ON c.transaction_id = t.id WHERE t.id = 8;
+
+pub fn list_currencies(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+) -> Result<(Vec<Currency>)> {
+    let mut stmt = conn.prepare("SELECT code, numeric_code, minor_unit FROM Currency")?;
+
+    let result = stmt
+        .query_map(NO_PARAMS, |row| {
+            Ok(Currency {
+                code: row.get(0).unwrap(),
+                numeric_code: row.get(1).unwrap(),
+                minor_unit: row.get(2).unwrap(),
+                name: row.get(3).unwrap()
+            })
+        })
+        .and_then(|mapped_rows| {
+            Ok(mapped_rows
+                .map(|row| row.unwrap())
+                .collect::<Vec<Currency>>())
+        })?;
+
+    Ok(result)
+}
