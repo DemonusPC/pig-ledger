@@ -32,6 +32,7 @@ pub struct Account {
     pub id: i32,
     pub acc_type: AccountType,
     pub name: String,
+    pub currency: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,6 +47,7 @@ pub struct NewTransaction {
 pub struct NewAccount {
     pub acc_type: i32,
     pub name: String,
+    pub currency: String
 }
 
 #[derive(Debug, Serialize, Deserialize)]
