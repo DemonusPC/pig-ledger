@@ -1,7 +1,9 @@
 CREATE TABLE "Accounts" (
 	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-	"Type"	INTEGER NOT NULL,
-	"Name"	TEXT NOT NULL
+	"type"	INTEGER NOT NULL,
+	"name"	TEXT NOT NULL,
+	"currency"	TEXT NOT NULL,
+	FOREIGN KEY("currency") REFERENCES "Currency"("code")
 )
 
 CREATE TABLE "Credits" (
