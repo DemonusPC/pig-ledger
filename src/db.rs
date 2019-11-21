@@ -1,4 +1,4 @@
-use crate::datastruct::{Account, AccountType, Entry, SqlResult, Transaction, Currency};
+use crate::datastruct::{Account, AccountType, Currency, Entry, SqlResult, Transaction};
 use rusqlite::{params, Connection, Result, NO_PARAMS};
 
 use chrono::{DateTime, Utc};
@@ -99,7 +99,7 @@ pub fn add_account(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     acc_type: AccountType,
     name: &str,
-    currency: &str
+    currency: &str,
 ) -> Result<()> {
     let con = conn.deref_mut();
     let tx = con.transaction()?;
@@ -264,7 +264,7 @@ pub fn list_currencies(
                 code: row.get(0).unwrap(),
                 numeric_code: row.get(1).unwrap(),
                 minor_unit: row.get(2).unwrap(),
-                name: row.get(3).unwrap()
+                name: row.get(3).unwrap(),
             })
         })
         .and_then(|mapped_rows| {

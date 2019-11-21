@@ -47,7 +47,7 @@ pub struct NewTransaction {
 pub struct NewAccount {
     pub acc_type: i32,
     pub name: String,
-    pub currency: String
+    pub currency: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -80,5 +80,5 @@ pub struct Currency {
     pub code: String,
     pub numeric_code: i32,
     pub minor_unit: i32,
-    pub name: String
+    pub name: String,
 }
