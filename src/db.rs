@@ -275,3 +275,48 @@ pub fn list_currencies(
 
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use r2d2_sqlite::SqliteConnectionManager;
+    use rusqlite::params;
+    use super::*;
+    #[test]
+    fn lists_currencies() {
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::new(manager).unwrap();
+        let conn = pool.get().unwrap();
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Currency\" (
+	        \"code\"	TEXT NOT NULL UNIQUE,
+	        \"numeric_code\"	INTEGER NOT NULL UNIQUE,
+	        \"minor_unit\"	INTEGER NOT NULL DEFAULT 2,
+	        \"name\"	TEXT NOT NULL UNIQUE,
+	        PRIMARY KEY(\"code\")
+            )",
+            params![],
+        );
+
+        let num = conn.execute(
+            "INSERT INTO Currency (code, numeric_code, minor_unit, name) VALUES ('GBP', '826', '2', 'Pound Sterling');",
+            params![],
+        );
+
+        assert_eq!(num.unwrap(), 1);
+
+
+        let expected = vec![Currency{
+           code: String::from("GBP"),
+           numeric_code: 826,
+           minor_unit: 2,
+           name: String::from("Pound Sterling")
+        }];
+        let result = list_currencies(conn).unwrap();
+
+        assert_eq!(expected[0].code, result[0].code);
+        assert_eq!(expected[0].numeric_code, result[0].numeric_code);
+        assert_eq!(expected[0].minor_unit, result[0].minor_unit);
+        assert_eq!(expected[0].name, result[0].name);
+    }
+}
