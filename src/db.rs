@@ -7,7 +7,7 @@ use std::ops::DerefMut;
 pub fn list_accounts(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
 ) -> Result<(Vec<Account>)> {
-    let mut stmt = conn.prepare("SELECT id, type, name from Accounts")?;
+    let mut stmt = conn.prepare("SELECT id, type, name, currency from Accounts")?;
 
     let accounts = stmt
         .query_map(NO_PARAMS, |row| {
@@ -15,6 +15,7 @@ pub fn list_accounts(
                 id: row.get(0).unwrap(),
                 acc_type: AccountType::from_i32(row.get(1).unwrap()),
                 name: row.get(2).unwrap(),
+                currency: row.get(3).unwrap(),
             })
         })
         .and_then(|mapped_rows| {
@@ -51,13 +52,14 @@ pub fn get_account(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     account: &str,
 ) -> Result<(Account)> {
-    let mut stmt = conn.prepare("SELECT id, type, name FROM Accounts WHERE name = ?1")?;
+    let mut stmt = conn.prepare("SELECT id, type, name, currency FROM Accounts WHERE name = ?1")?;
 
     stmt.query_row(params![account], |row| {
         Ok(Account {
             id: row.get(0).unwrap(),
             acc_type: AccountType::from_i32(row.get(1).unwrap()),
             name: row.get(2).unwrap(),
+            currency: row.get(3).unwrap(),
         })
     })
 }
@@ -66,13 +68,14 @@ pub fn get_account_by_id(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
 ) -> Result<(Account)> {
-    let mut stmt = conn.prepare("SELECT id, type, name FROM Accounts WHERE id = ?1")?;
+    let mut stmt = conn.prepare("SELECT id, type, name, currency FROM Accounts WHERE id = ?1")?;
 
     stmt.query_row(params![id], |row| {
         Ok(Account {
             id: row.get(0).unwrap(),
             acc_type: AccountType::from_i32(row.get(1).unwrap()),
             name: row.get(2).unwrap(),
+            currency: row.get(3).unwrap(),
         })
     })
 }
@@ -96,13 +99,14 @@ pub fn add_account(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     acc_type: AccountType,
     name: &str,
+    currency: &str
 ) -> Result<()> {
     let con = conn.deref_mut();
     let tx = con.transaction()?;
 
     tx.execute(
-        "INSERT INTO Accounts (Type, Name) VALUES (?1, ?2)",
-        params![acc_type as i32, name],
+        "INSERT INTO Accounts (type, name, currency) VALUES (?1, ?2, ?3)",
+        params![acc_type as i32, name, currency],
     )?;
 
     tx.commit()

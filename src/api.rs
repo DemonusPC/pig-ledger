@@ -116,7 +116,7 @@ pub fn create_account(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let account_type = datastruct::AccountType::from_i32(account.acc_type);
-    let result = db::add_account(pool.get().unwrap(), account_type, &account.name);
+    let result = db::add_account(pool.get().unwrap(), account_type, &account.name, &account.currency);
 
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
