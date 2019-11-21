@@ -252,7 +252,7 @@ pub fn get_credit(
 pub fn list_currencies(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
 ) -> Result<(Vec<Currency>)> {
-    let mut stmt = conn.prepare("SELECT code, numeric_code, minor_unit FROM Currency")?;
+    let mut stmt = conn.prepare("SELECT code, numeric_code, minor_unit, name FROM Currency")?;
 
     let result = stmt
         .query_map(NO_PARAMS, |row| {
