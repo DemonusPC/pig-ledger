@@ -72,3 +72,11 @@ pub struct Entry {
 pub struct SqlResult {
     pub value: f64,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Currency {
+    pub code: String,
+    pub numeric_code: i32,
+    pub minor_unit: i32,
+    pub name: String
+}
