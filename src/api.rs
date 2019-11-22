@@ -43,23 +43,31 @@ pub fn create_transaction(
     transaction: web::Json<datastruct::NewTransaction>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
-    let from_account = db::get_account(pool.get().unwrap(), &transaction.from).unwrap();
-    let to_account = db::get_account(pool.get().unwrap(), &transaction.to).unwrap();
+    // First we get the two accounts
+    let from_acc_query = db::get_account(pool.get().unwrap(), &transaction.from);
+    let to_acc_query = db::get_account(pool.get().unwrap(), &transaction.to);
 
-    if are_accounts_compatible(&from_account, &to_account) == false {
+    if from_acc_query.is_err() || to_acc_query.is_err() {
         ok(HttpResponse::BadRequest().finish())
     } else {
-        let result = db::transaction(
-            pool.get().unwrap(),
-            to_account.id,
-            from_account.id,
-            transaction.balance,
-            &transaction.name,
-        );
+        let from_account = from_acc_query.unwrap();
+        let to_account = to_acc_query.unwrap();
 
-        match result {
-            Ok(_v) => ok(HttpResponse::Ok().finish()),
-            Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        if are_accounts_compatible(&from_account, &to_account) == false {
+            ok(HttpResponse::BadRequest().finish())
+        } else {
+            let result = db::transaction(
+                pool.get().unwrap(),
+                to_account.id,
+                from_account.id,
+                transaction.balance,
+                &transaction.name,
+            );
+
+            match result {
+                Ok(_v) => ok(HttpResponse::Ok().finish()),
+                Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+            }
         }
     }
 }
