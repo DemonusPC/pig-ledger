@@ -164,7 +164,7 @@ pub fn delete_account(
     params: web::Path<datastruct::IdRequest>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
-    let result = db::remove_account_by_id(pool.get().unwrap(), params.id);
+    let result = db::remove_account(pool.get().unwrap(), params.id);
 
     match result {
         Ok(_v) => ok(HttpResponse::Ok().finish()),

@@ -98,18 +98,6 @@ pub fn add_account(
 
 pub fn remove_account(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    name: &str,
-) -> Result<()> {
-    let con = conn.deref_mut();
-    let tx = con.transaction()?;
-
-    tx.execute("DELETE FROM Accounts WHERE Name = ?1", params![name])?;
-
-    tx.commit()
-}
-
-pub fn remove_account_by_id(
-    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
 ) -> Result<()> {
     let con = conn.deref_mut();
