@@ -142,7 +142,7 @@ pub fn transaction(
     credit_account: i32,
     balance: f64,
     name: &str,
-) -> Result<()> {
+) -> Result<i64> {
     let con = conn.deref_mut();
     let tx = con.transaction()?;
     let date: DateTime<Utc> = Utc::now();
@@ -163,7 +163,12 @@ pub fn transaction(
         params![credit_account, transaction_id, balance],
     )?;
 
-    tx.commit()
+    let transaction_result = tx.commit();
+
+    match transaction_result {
+        Ok(_) => Ok(transaction_id),
+        Err(_) => panic!("Transaction has failed"),
+    }
 }
 
 pub fn remove_transaction(

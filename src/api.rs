@@ -66,7 +66,13 @@ pub fn create_transaction(
         );
 
         match result {
-            Ok(_v) => ok(HttpResponse::Ok().finish()),
+            Ok(v) => {
+                let result = json!({
+                    "id": v,
+                });
+
+                ok(HttpResponse::Ok().json(result))
+            }
             Err(_e) => ok(HttpResponse::InternalServerError().finish()),
         }
     }
@@ -79,7 +85,13 @@ pub fn delete_transaction(
     let result = db::remove_transaction(pool.get().unwrap(), params.id);
 
     match result {
-        Ok(_v) => ok(HttpResponse::Ok().finish()),
+        Ok(_v) => {
+                let result = json!({
+                    "id": params.id,
+                });
+
+                ok(HttpResponse::Ok().json(result))
+            }
         Err(_e) => ok(HttpResponse::InternalServerError().finish()),
     }
 }
