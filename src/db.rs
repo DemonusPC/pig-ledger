@@ -278,9 +278,9 @@ pub fn list_currencies(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use r2d2_sqlite::SqliteConnectionManager;
     use rusqlite::params;
-    use super::*;
     #[test]
     fn lists_currencies_returns_struct() {
         let manager = SqliteConnectionManager::memory();
@@ -305,12 +305,11 @@ mod tests {
 
         assert_eq!(num.unwrap(), 1);
 
-
         let expected = Currency {
-           code: String::from("GBP"),
-           numeric_code: 826,
-           minor_unit: 2,
-           name: String::from("Pound Sterling")
+            code: String::from("GBP"),
+            numeric_code: 826,
+            minor_unit: 2,
+            name: String::from("Pound Sterling"),
         };
         let result = list_currencies(conn).unwrap();
 
