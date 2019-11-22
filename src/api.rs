@@ -32,7 +32,7 @@ pub fn list_transactions() -> impl Future<Item = HttpResponse, Error = Error> {
     }
 }
 
-fn are_accounts_compatible(from : &datastruct::Account, to : &datastruct::Account) -> bool {
+fn are_accounts_compatible(from: &datastruct::Account, to: &datastruct::Account) -> bool {
     if &from.id == &to.id || &from.currency != &to.currency {
         return false;
     }
@@ -186,13 +186,13 @@ mod tests {
             id: 0,
             acc_type: AccountType::Assets,
             name: String::from("Current"),
-            currency: String::from("GBP")
+            currency: String::from("GBP"),
         };
         let second = Account {
             id: 0,
             acc_type: AccountType::Assets,
             name: String::from("Current"),
-            currency: String::from("GBP")
+            currency: String::from("GBP"),
         };
 
         let result = are_accounts_compatible(&first, &second);
@@ -206,13 +206,13 @@ mod tests {
             id: 0,
             acc_type: AccountType::Assets,
             name: String::from("Current"),
-            currency: String::from("GBP")
+            currency: String::from("GBP"),
         };
         let second = Account {
             id: 1,
             acc_type: AccountType::Expenses,
             name: String::from("Groceries"),
-            currency: String::from("GBP")
+            currency: String::from("GBP"),
         };
 
         let result = are_accounts_compatible(&first, &second);
@@ -226,13 +226,13 @@ mod tests {
             id: 0,
             acc_type: AccountType::Assets,
             name: String::from("Current"),
-            currency: String::from("GBP")
+            currency: String::from("GBP"),
         };
         let second = Account {
             id: 1,
             acc_type: AccountType::Expenses,
             name: String::from("Groceries"),
-            currency: String::from("EUR")
+            currency: String::from("EUR"),
         };
 
         let result = are_accounts_compatible(&first, &second);
