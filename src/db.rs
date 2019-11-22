@@ -1,4 +1,4 @@
-use crate::datastruct::{Account, AccountType, Currency, Entry, SqlResult, Transaction};
+use crate::datastruct::{Account, AccountType, Currency, Entry, EntryType, SqlResult, Transaction};
 use rusqlite::{params, Connection, Result, NO_PARAMS};
 
 use chrono::{DateTime, Utc};
@@ -206,6 +206,7 @@ pub fn get_debit(
             account: row.get(1).unwrap(),
             transaction_id: row.get(2).unwrap(),
             balance: row.get(3).unwrap(),
+            entry_type: EntryType::Debit,
         })
     })
 }
@@ -224,8 +225,34 @@ pub fn get_credit(
             account: row.get(1).unwrap(),
             transaction_id: row.get(2).unwrap(),
             balance: row.get(3).unwrap(),
+            entry_type: EntryType::Credit,
         })
     })
+}
+
+pub fn get_entries(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    id: i32,
+) -> Result<(Vec<Entry>)> {
+    let mut stmt = conn.prepare(
+        "SELECT id, account, transaction_id, balance, 0 as entry_type FROM Credits WHERE transaction_id = 2
+        UNION ALL
+        SELECT id, account, transaction_id, balance, 1 as entry_type FROM Debits WHERE transaction_id = 2;",
+    )?;
+
+    let result = stmt
+        .query_map(NO_PARAMS, |row| {
+            Ok(Entry {
+                id: row.get(0).unwrap(),
+                account: row.get(1).unwrap(),
+                transaction_id: row.get(2).unwrap(),
+                balance: row.get(3).unwrap(),
+                entry_type: EntryType::from_i32(row.get(4).unwrap()),
+            })
+        })
+        .and_then(|mapped_rows| Ok(mapped_rows.map(|row| row.unwrap()).collect::<Vec<Entry>>()))?;
+
+    Ok(result)
 }
 
 // SELECT t.date, t.name,  c.account as "from", c.balance as "Credit", d.account as "to",  d.balance as "Debit" FROM Transactions as t LEFT JOIN Debits as d ON d.transaction_id = t.id LEFT JOIN Credits as c ON c.transaction_id = t.id WHERE t.id = 8;
