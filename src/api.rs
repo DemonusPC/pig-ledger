@@ -86,12 +86,12 @@ pub fn delete_transaction(
 
     match result {
         Ok(_v) => {
-                let result = json!({
-                    "id": params.id,
-                });
+            let result = json!({
+                "id": params.id,
+            });
 
-                ok(HttpResponse::Ok().json(result))
-            }
+            ok(HttpResponse::Ok().json(result))
+        }
         Err(_e) => ok(HttpResponse::InternalServerError().finish()),
     }
 }

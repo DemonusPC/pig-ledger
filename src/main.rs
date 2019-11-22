@@ -47,10 +47,10 @@ fn main() -> io::Result<()> {
             .wrap(Cors::new().send_wildcard().max_age(3600))
             .data(pool.clone())
             .service(web::resource("/").route(web::get().to_async(api::index)))
+            .service(web::resource("/currencies").route(web::get().to_async(api::list_currencies)))
             .service(
                 web::resource("/transactions").route(web::get().to_async(api::list_transactions)),
             )
-            .service(web::resource("/currencies").route(web::get().to_async(api::list_currencies)))
             .service(
                 web::scope("/transaction")
                     .service(
