@@ -134,7 +134,7 @@ pub fn get_account(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let conn = pool.get().unwrap();
-    let result = db::get_account_by_id(conn, params.id);
+    let result = db::get_account(conn, params.id);
 
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
@@ -192,6 +192,23 @@ pub fn list_currencies(
 
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
+        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    }
+}
+
+pub fn check_ledger_integrity(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let conn = pool.get().unwrap();
+    let result = db::check_integrity(conn);
+
+    match result {
+        Ok(v) => {
+            let result = json!({
+                "integrity": v,
+            });
+            ok(HttpResponse::Ok().json(result))
+        }
         Err(_e) => ok(HttpResponse::InternalServerError().finish()),
     }
 }
