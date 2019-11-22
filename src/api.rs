@@ -180,25 +180,6 @@ pub fn list_currencies(
 mod tests {
     use super::*;
     use crate::datastruct::{Account, AccountType};
-    #[test]
-    fn accounts_not_compatible_if_id_equal() {
-        let first = Account {
-            id: 0,
-            acc_type: AccountType::Assets,
-            name: String::from("Current"),
-            currency: String::from("GBP"),
-        };
-        let second = Account {
-            id: 0,
-            acc_type: AccountType::Assets,
-            name: String::from("Current"),
-            currency: String::from("GBP"),
-        };
-
-        let result = are_accounts_compatible(&first, &second);
-
-        assert_eq!(result, false)
-    }
 
     #[test]
     fn accounts_compatible() {
@@ -212,6 +193,26 @@ mod tests {
             id: 1,
             acc_type: AccountType::Expenses,
             name: String::from("Groceries"),
+            currency: String::from("GBP"),
+        };
+
+        let result = are_accounts_compatible(&first, &second);
+
+        assert_eq!(result, true)
+    }
+
+    #[test]
+    fn accounts_not_compatible_if_id_equal() {
+        let first = Account {
+            id: 0,
+            acc_type: AccountType::Assets,
+            name: String::from("Current"),
+            currency: String::from("GBP"),
+        };
+        let second = Account {
+            id: 0,
+            acc_type: AccountType::Assets,
+            name: String::from("Current"),
             currency: String::from("GBP"),
         };
 
