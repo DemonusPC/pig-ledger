@@ -34,13 +34,6 @@ pub enum EntryType {
 }
 
 impl EntryType {
-    pub fn opposite(other: EntryType) -> EntryType {
-        match other {
-            EntryType::Debit => EntryType::Credit,
-            EntryType::Credit => EntryType::Debit,
-        }
-    }
-
     pub fn from_i32(value: i32) -> EntryType {
         match value {
             0 => EntryType::Credit,
@@ -119,14 +112,4 @@ mod tests {
         assert_eq!(debit, EntryType::Debit);
         assert_eq!(credit, EntryType::Credit)
     }
-
-    #[test]
-    fn entry_correctly_finds_opposite() {
-        let credit = EntryType::opposite(EntryType::Debit);
-        let debit = EntryType::opposite(EntryType::Credit);
-
-        assert_eq!(debit, EntryType::Debit);
-        assert_eq!(credit, EntryType::Credit)
-    }
-
 }
