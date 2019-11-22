@@ -75,7 +75,7 @@ pub struct SqlResult {
     pub value: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Currency {
     pub code: String,
     pub numeric_code: i32,
