@@ -50,22 +50,6 @@ pub fn list_transactions() -> Result<(Vec<Transaction>)> {
 
 pub fn get_account(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    account: &str,
-) -> Result<(Account)> {
-    let mut stmt = conn.prepare("SELECT id, type, name, currency FROM Accounts WHERE name = ?1")?;
-
-    stmt.query_row(params![account], |row| {
-        Ok(Account {
-            id: row.get(0).unwrap(),
-            acc_type: AccountType::from_i32(row.get(1).unwrap()),
-            name: row.get(2).unwrap(),
-            currency: row.get(3).unwrap(),
-        })
-    })
-}
-
-pub fn get_account_by_id(
-    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
 ) -> Result<(Account)> {
     let mut stmt = conn.prepare("SELECT id, type, name, currency FROM Accounts WHERE id = ?1")?;

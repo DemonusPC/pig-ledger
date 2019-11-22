@@ -44,8 +44,8 @@ pub fn create_transaction(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     // First we get the two accounts
-    let from_acc_query = db::get_account_by_id(pool.get().unwrap(), transaction.from);
-    let to_acc_query = db::get_account_by_id(pool.get().unwrap(), transaction.to);
+    let from_acc_query = db::get_account(pool.get().unwrap(), transaction.from);
+    let to_acc_query = db::get_account(pool.get().unwrap(), transaction.to);
 
     if from_acc_query.is_err() || to_acc_query.is_err() {
         return ok(HttpResponse::BadRequest().finish());
