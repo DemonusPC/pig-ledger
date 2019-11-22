@@ -113,17 +113,15 @@ pub fn get_transaction_detail(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let transaction = db::get_transaction(pool.get().unwrap(), params.id);
-    let debit = db::get_debit(pool.get().unwrap(), params.id);
-    let credit = db::get_credit(pool.get().unwrap(), params.id);
+    let entries = db::get_entries(pool.get().unwrap(), params.id);
 
-    if transaction.is_err() || debit.is_err() || credit.is_err() {
+    if transaction.is_err() || entries.is_err() {
         return ok(HttpResponse::InternalServerError().finish());
     }
 
     let result = json!({
         "transaction": transaction.unwrap(),
-        "debit": debit.unwrap(),
-        "credit": credit.unwrap()
+        "entries": entries.unwrap(),
     });
 
     ok(HttpResponse::Ok().json(result))

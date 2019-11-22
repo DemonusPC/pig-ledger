@@ -235,13 +235,13 @@ pub fn get_entries(
     id: i32,
 ) -> Result<(Vec<Entry>)> {
     let mut stmt = conn.prepare(
-        "SELECT id, account, transaction_id, balance, 0 as entry_type FROM Credits WHERE transaction_id = 2
+        "SELECT id, account, transaction_id, balance, 0 as entry_type FROM Credits WHERE transaction_id = ?1
         UNION ALL
-        SELECT id, account, transaction_id, balance, 1 as entry_type FROM Debits WHERE transaction_id = 2;",
+        SELECT id, account, transaction_id, balance, 1 as entry_type FROM Debits WHERE transaction_id = ?1;",
     )?;
 
     let result = stmt
-        .query_map(NO_PARAMS, |row| {
+        .query_map(params![id], |row| {
             Ok(Entry {
                 id: row.get(0).unwrap(),
                 account: row.get(1).unwrap(),
@@ -251,6 +251,10 @@ pub fn get_entries(
             })
         })
         .and_then(|mapped_rows| Ok(mapped_rows.map(|row| row.unwrap()).collect::<Vec<Entry>>()))?;
+
+    if result.len() % 2 != 0 {
+        panic!("Uneven number of entries. Integrity damaged");
+    }
 
     Ok(result)
 }
