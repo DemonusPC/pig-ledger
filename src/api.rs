@@ -48,26 +48,26 @@ pub fn create_transaction(
     let to_acc_query = db::get_account(pool.get().unwrap(), &transaction.to);
 
     if from_acc_query.is_err() || to_acc_query.is_err() {
+        return ok(HttpResponse::BadRequest().finish());
+    }
+
+    let from_account = from_acc_query.unwrap();
+    let to_account = to_acc_query.unwrap();
+
+    if are_accounts_compatible(&from_account, &to_account) == false {
         ok(HttpResponse::BadRequest().finish())
     } else {
-        let from_account = from_acc_query.unwrap();
-        let to_account = to_acc_query.unwrap();
+        let result = db::transaction(
+            pool.get().unwrap(),
+            to_account.id,
+            from_account.id,
+            transaction.balance,
+            &transaction.name,
+        );
 
-        if are_accounts_compatible(&from_account, &to_account) == false {
-            ok(HttpResponse::BadRequest().finish())
-        } else {
-            let result = db::transaction(
-                pool.get().unwrap(),
-                to_account.id,
-                from_account.id,
-                transaction.balance,
-                &transaction.name,
-            );
-
-            match result {
-                Ok(_v) => ok(HttpResponse::Ok().finish()),
-                Err(_e) => ok(HttpResponse::InternalServerError().finish()),
-            }
+        match result {
+            Ok(_v) => ok(HttpResponse::Ok().finish()),
+            Err(_e) => ok(HttpResponse::InternalServerError().finish()),
         }
     }
 }
