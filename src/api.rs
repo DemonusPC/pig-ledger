@@ -32,6 +32,13 @@ pub fn list_transactions() -> impl Future<Item = HttpResponse, Error = Error> {
     }
 }
 
+fn are_accounts_compatible(from: &datastruct::Account, to: &datastruct::Account) -> bool {
+    if &from.id == &to.id || &from.currency != &to.currency {
+        return false;
+    }
+    return true;
+}
+
 pub fn create_transaction(
     transaction: web::Json<datastruct::NewTransaction>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
@@ -39,17 +46,21 @@ pub fn create_transaction(
     let from_account = db::get_account(pool.get().unwrap(), &transaction.from).unwrap();
     let to_account = db::get_account(pool.get().unwrap(), &transaction.to).unwrap();
 
-    let result = db::transaction(
-        pool.get().unwrap(),
-        to_account.id,
-        from_account.id,
-        transaction.balance,
-        &transaction.name,
-    );
+    if are_accounts_compatible(&from_account, &to_account) == false {
+        ok(HttpResponse::BadRequest().finish())
+    } else {
+        let result = db::transaction(
+            pool.get().unwrap(),
+            to_account.id,
+            from_account.id,
+            transaction.balance,
+            &transaction.name,
+        );
 
-    match result {
-        Ok(_v) => ok(HttpResponse::Ok().finish()),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        match result {
+            Ok(_v) => ok(HttpResponse::Ok().finish()),
+            Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        }
     }
 }
 
@@ -116,7 +127,12 @@ pub fn create_account(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let account_type = datastruct::AccountType::from_i32(account.acc_type);
-    let result = db::add_account(pool.get().unwrap(), account_type, &account.name);
+    let result = db::add_account(
+        pool.get().unwrap(),
+        account_type,
+        &account.name,
+        &account.currency,
+    );
 
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
@@ -145,5 +161,83 @@ pub fn get_account_balance(
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
         Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    }
+}
+
+pub fn list_currencies(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let conn = pool.get().unwrap();
+    let result = db::list_currencies(conn);
+
+    match result {
+        Ok(v) => ok(HttpResponse::Ok().json(v)),
+        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::datastruct::{Account, AccountType};
+
+    #[test]
+    fn accounts_compatible() {
+        let first = Account {
+            id: 0,
+            acc_type: AccountType::Assets,
+            name: String::from("Current"),
+            currency: String::from("GBP"),
+        };
+        let second = Account {
+            id: 1,
+            acc_type: AccountType::Expenses,
+            name: String::from("Groceries"),
+            currency: String::from("GBP"),
+        };
+
+        let result = are_accounts_compatible(&first, &second);
+
+        assert_eq!(result, true)
+    }
+
+    #[test]
+    fn accounts_not_compatible_if_id_equal() {
+        let first = Account {
+            id: 0,
+            acc_type: AccountType::Assets,
+            name: String::from("Current"),
+            currency: String::from("GBP"),
+        };
+        let second = Account {
+            id: 0,
+            acc_type: AccountType::Assets,
+            name: String::from("Current"),
+            currency: String::from("GBP"),
+        };
+
+        let result = are_accounts_compatible(&first, &second);
+
+        assert_eq!(result, false)
+    }
+
+    #[test]
+    fn accounts_not_compatible_if_different_currencies() {
+        let first = Account {
+            id: 0,
+            acc_type: AccountType::Assets,
+            name: String::from("Current"),
+            currency: String::from("GBP"),
+        };
+        let second = Account {
+            id: 1,
+            acc_type: AccountType::Expenses,
+            name: String::from("Groceries"),
+            currency: String::from("EUR"),
+        };
+
+        let result = are_accounts_compatible(&first, &second);
+
+        assert_eq!(result, false)
     }
 }

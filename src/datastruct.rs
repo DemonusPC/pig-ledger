@@ -32,6 +32,7 @@ pub struct Account {
     pub id: i32,
     pub acc_type: AccountType,
     pub name: String,
+    pub currency: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,6 +47,7 @@ pub struct NewTransaction {
 pub struct NewAccount {
     pub acc_type: i32,
     pub name: String,
+    pub currency: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -71,4 +73,12 @@ pub struct Entry {
 #[derive(Debug, Serialize)]
 pub struct SqlResult {
     pub value: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct Currency {
+    pub code: String,
+    pub numeric_code: i32,
+    pub minor_unit: i32,
+    pub name: String,
 }

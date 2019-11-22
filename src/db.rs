@@ -1,4 +1,4 @@
-use crate::datastruct::{Account, AccountType, Entry, SqlResult, Transaction};
+use crate::datastruct::{Account, AccountType, Currency, Entry, SqlResult, Transaction};
 use rusqlite::{params, Connection, Result, NO_PARAMS};
 
 use chrono::{DateTime, Utc};
@@ -7,7 +7,7 @@ use std::ops::DerefMut;
 pub fn list_accounts(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
 ) -> Result<(Vec<Account>)> {
-    let mut stmt = conn.prepare("SELECT id, type, name from Accounts")?;
+    let mut stmt = conn.prepare("SELECT id, type, name, currency from Accounts")?;
 
     let accounts = stmt
         .query_map(NO_PARAMS, |row| {
@@ -15,6 +15,7 @@ pub fn list_accounts(
                 id: row.get(0).unwrap(),
                 acc_type: AccountType::from_i32(row.get(1).unwrap()),
                 name: row.get(2).unwrap(),
+                currency: row.get(3).unwrap(),
             })
         })
         .and_then(|mapped_rows| {
@@ -51,13 +52,14 @@ pub fn get_account(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     account: &str,
 ) -> Result<(Account)> {
-    let mut stmt = conn.prepare("SELECT id, type, name FROM Accounts WHERE name = ?1")?;
+    let mut stmt = conn.prepare("SELECT id, type, name, currency FROM Accounts WHERE name = ?1")?;
 
     stmt.query_row(params![account], |row| {
         Ok(Account {
             id: row.get(0).unwrap(),
             acc_type: AccountType::from_i32(row.get(1).unwrap()),
             name: row.get(2).unwrap(),
+            currency: row.get(3).unwrap(),
         })
     })
 }
@@ -66,13 +68,14 @@ pub fn get_account_by_id(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
 ) -> Result<(Account)> {
-    let mut stmt = conn.prepare("SELECT id, type, name FROM Accounts WHERE id = ?1")?;
+    let mut stmt = conn.prepare("SELECT id, type, name, currency FROM Accounts WHERE id = ?1")?;
 
     stmt.query_row(params![id], |row| {
         Ok(Account {
             id: row.get(0).unwrap(),
             acc_type: AccountType::from_i32(row.get(1).unwrap()),
             name: row.get(2).unwrap(),
+            currency: row.get(3).unwrap(),
         })
     })
 }
@@ -96,13 +99,14 @@ pub fn add_account(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     acc_type: AccountType,
     name: &str,
+    currency: &str,
 ) -> Result<()> {
     let con = conn.deref_mut();
     let tx = con.transaction()?;
 
     tx.execute(
-        "INSERT INTO Accounts (Type, Name) VALUES (?1, ?2)",
-        params![acc_type as i32, name],
+        "INSERT INTO Accounts (type, name, currency) VALUES (?1, ?2, ?3)",
+        params![acc_type as i32, name, currency],
     )?;
 
     tx.commit()
@@ -248,3 +252,98 @@ pub fn get_credit(
 }
 
 // SELECT t.date, t.name,  c.account as "from", c.balance as "Credit", d.account as "to",  d.balance as "Debit" FROM Transactions as t LEFT JOIN Debits as d ON d.transaction_id = t.id LEFT JOIN Credits as c ON c.transaction_id = t.id WHERE t.id = 8;
+
+pub fn list_currencies(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+) -> Result<(Vec<Currency>)> {
+    let mut stmt = conn.prepare("SELECT code, numeric_code, minor_unit, name FROM Currency")?;
+
+    let result = stmt
+        .query_map(NO_PARAMS, |row| {
+            Ok(Currency {
+                code: row.get(0).unwrap(),
+                numeric_code: row.get(1).unwrap(),
+                minor_unit: row.get(2).unwrap(),
+                name: row.get(3).unwrap(),
+            })
+        })
+        .and_then(|mapped_rows| {
+            Ok(mapped_rows
+                .map(|row| row.unwrap())
+                .collect::<Vec<Currency>>())
+        })?;
+
+    Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use r2d2_sqlite::SqliteConnectionManager;
+    use rusqlite::params;
+    #[test]
+    fn lists_currencies_returns_struct() {
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::new(manager).unwrap();
+        let conn = pool.get().unwrap();
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Currency\" (
+	        \"code\"	TEXT NOT NULL UNIQUE,
+	        \"numeric_code\"	INTEGER NOT NULL UNIQUE,
+	        \"minor_unit\"	INTEGER NOT NULL DEFAULT 2,
+	        \"name\"	TEXT NOT NULL UNIQUE,
+	        PRIMARY KEY(\"code\")
+            )",
+            params![],
+        );
+
+        let num = conn.execute(
+            "INSERT INTO Currency (code, numeric_code, minor_unit, name) VALUES ('GBP', '826', '2', 'Pound Sterling');",
+            params![],
+        );
+
+        assert_eq!(num.unwrap(), 1);
+
+        let expected = Currency {
+            code: String::from("GBP"),
+            numeric_code: 826,
+            minor_unit: 2,
+            name: String::from("Pound Sterling"),
+        };
+        let result = list_currencies(conn).unwrap();
+
+        assert_eq!(expected, result[0]);
+    }
+
+    #[test]
+    fn list_currencies_can_return_multiple_currencies() {
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::new(manager).unwrap();
+        let conn = pool.get().unwrap();
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Currency\" (
+	        \"code\"	TEXT NOT NULL UNIQUE,
+	        \"numeric_code\"	INTEGER NOT NULL UNIQUE,
+	        \"minor_unit\"	INTEGER NOT NULL DEFAULT 2,
+	        \"name\"	TEXT NOT NULL UNIQUE,
+	        PRIMARY KEY(\"code\")
+            )",
+            params![],
+        );
+
+        let num = conn.execute(
+            "INSERT INTO Currency (code, numeric_code, minor_unit, name) VALUES 
+            ('GBP', '826', '2', 'Pound Sterling'),
+            ('EUR', '978', '2', 'Euro'),
+            ('PLN', '985', '2', 'Zloty');",
+            params![],
+        );
+        assert_eq!(num.unwrap(), 3);
+
+        let result = list_currencies(conn).unwrap();
+
+        assert_eq!(result.len(), 3)
+    }
+}
