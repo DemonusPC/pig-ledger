@@ -192,44 +192,6 @@ pub fn current_balance(
     })
 }
 
-pub fn get_debit(
-    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    id: i32,
-) -> Result<(Entry)> {
-    let mut stmt = conn.prepare(
-        "SELECT id, account, transaction_id, balance from Debits WHERE transaction_id = ?1;",
-    )?;
-
-    stmt.query_row(params![id], |row| {
-        Ok(Entry {
-            id: row.get(0).unwrap(),
-            account: row.get(1).unwrap(),
-            transaction_id: row.get(2).unwrap(),
-            balance: row.get(3).unwrap(),
-            entry_type: EntryType::Debit,
-        })
-    })
-}
-
-pub fn get_credit(
-    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    id: i32,
-) -> Result<(Entry)> {
-    let mut stmt = conn.prepare(
-        "SELECT id, account, transaction_id, balance from Credits WHERE transaction_id = ?1;",
-    )?;
-
-    stmt.query_row(params![id], |row| {
-        Ok(Entry {
-            id: row.get(0).unwrap(),
-            account: row.get(1).unwrap(),
-            transaction_id: row.get(2).unwrap(),
-            balance: row.get(3).unwrap(),
-            entry_type: EntryType::Credit,
-        })
-    })
-}
-
 pub fn get_entries(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
