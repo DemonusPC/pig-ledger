@@ -112,7 +112,7 @@ pub fn transaction(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     debit_account: i32,
     credit_account: i32,
-    balance: f64,
+    balance: i32,
     name: &str,
 ) -> Result<i64> {
     let con = conn.deref_mut();

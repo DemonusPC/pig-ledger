@@ -54,7 +54,7 @@ pub struct Account {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NewTransaction {
     pub name: String,
-    pub balance: f64,
+    pub balance: i32,
     pub from: i32,
     pub to: i32,
 }
@@ -83,7 +83,7 @@ pub struct Entry {
     pub id: i32,
     pub account: i32,
     pub transaction_id: i32,
-    pub balance: f64,
+    pub balance: i32,
     pub entry_type: EntryType,
 }
 

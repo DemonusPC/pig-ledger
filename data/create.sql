@@ -10,7 +10,7 @@ CREATE TABLE "Credits" (
 	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	"account"	INTEGER NOT NULL,
 	"transaction_id"	INTEGER NOT NULL,
-	"balance"	REAL NOT NULL DEFAULT 0.0,
+	"balance"	INTEGER NOT NULL DEFAULT 0 CHECK (typeof("balance") = 'integer'),
 	FOREIGN KEY("account") REFERENCES "Accounts"("id"),
 	FOREIGN KEY("transaction_id") REFERENCES "Transactions"("id") ON DELETE CASCADE
 )
@@ -19,7 +19,7 @@ CREATE TABLE "Debits" (
 	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	"account"	INTEGER NOT NULL,
 	"transaction_id"	INTEGER NOT NULL,
-	"balance"	REAL NOT NULL DEFAULT 0.0,
+	"balance"	INTEGER NOT NULL DEFAULT 0 CHECK (typeof("balance") = 'integer'),
 	FOREIGN KEY("account") REFERENCES "Accounts"("id"),
 	FOREIGN KEY("transaction_id") REFERENCES "Transactions"("id") ON DELETE CASCADE
 )
