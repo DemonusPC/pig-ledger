@@ -48,6 +48,35 @@ pub fn list_transactions() -> Result<(Vec<Transaction>)> {
     Ok(transactions)
 }
 
+pub fn list_transactions_date(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    month: u8,
+    year: i32,
+) -> Result<(Vec<Transaction>)> {
+    let mut stmt = conn.prepare(
+        "SELECT id, date, name from Transactions
+        WHERE CAST(strftime('%m', date) as integer) = ?1 
+        AND CAST(strftime('%Y', date) as integer) = ?2 
+        ORDER BY date",
+    )?;
+
+    let transactions = stmt
+        .query_map(params![month, year], |row| {
+            Ok(Transaction {
+                id: row.get(0).unwrap(),
+                date: row.get(1).unwrap(),
+                name: row.get(2).unwrap(),
+            })
+        })
+        .and_then(|mapped_rows| {
+            Ok(mapped_rows
+                .map(|row| row.unwrap())
+                .collect::<Vec<Transaction>>())
+        })?;
+
+    Ok(transactions)
+}
+
 pub fn get_account(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,

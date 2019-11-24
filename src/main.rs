@@ -54,7 +54,14 @@ fn main() -> io::Result<()> {
             .service(
                 web::scope("/transactions")
                     .service(web::resource("").route(web::get().to_async(api::list_transactions)))
-                    .service(web::resource("/detail").route(web::get().to_async(api::list_transactions_with_details)))
+                    .service(
+                        web::resource("/detail")
+                            .route(web::get().to_async(api::list_transactions_with_details)),
+                    )
+                    .service(
+                        web::resource("/{year}/{month}")
+                            .route(web::get().to_async(api::get_transactions_date_scoped)),
+                    ),
             )
             .service(
                 web::scope("/transaction")

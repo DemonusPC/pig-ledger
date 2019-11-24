@@ -71,6 +71,12 @@ pub struct IdRequest {
     pub id: i32,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DateRequest {
+    pub year: i32,
+    pub month: u8,
+}
+
 #[derive(Debug, Serialize)]
 pub struct Transaction {
     pub id: i32,
