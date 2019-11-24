@@ -32,6 +32,35 @@ pub fn list_transactions() -> impl Future<Item = HttpResponse, Error = Error> {
     }
 }
 
+pub fn list_transactions_with_details(pool: web::Data<Pool<SqliteConnectionManager>>) -> impl Future<Item = HttpResponse, Error = Error> {
+    let transactions = db::list_transactions();
+
+    if transactions.is_err() {
+        return  ok(HttpResponse::InternalServerError().finish());
+    }
+
+    let mut vec: Vec<serde_json::value::Value> = Vec::new();
+
+    for t in transactions.unwrap() {
+        let entries = db::get_entries(pool.get().unwrap(), t.id);
+        match entries {
+            Ok(v) => { 
+                let result = json!({
+                    "transaction": t,
+                    "entries": v
+                });
+                vec.push(result);
+            },
+            Err(_e) => continue
+        }
+    }
+
+    let result = json!({
+        "transactions": vec
+    });
+    ok(HttpResponse::Ok().json(result))
+}
+
 fn are_accounts_compatible(from: &datastruct::Account, to: &datastruct::Account) -> bool {
     if &from.id == &to.id || &from.currency != &to.currency {
         return false;

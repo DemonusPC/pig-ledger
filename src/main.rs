@@ -52,7 +52,9 @@ fn main() -> io::Result<()> {
                 web::resource("/integrity").route(web::get().to_async(api::check_ledger_integrity)),
             )
             .service(
-                web::resource("/transactions").route(web::get().to_async(api::list_transactions)),
+                web::scope("/transactions")
+                    .service(web::resource("").route(web::get().to_async(api::list_transactions)))
+                    .service(web::resource("/detail").route(web::get().to_async(api::list_transactions_with_details)))
             )
             .service(
                 web::scope("/transaction")
