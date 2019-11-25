@@ -280,6 +280,78 @@ mod tests {
     use super::*;
     use r2d2_sqlite::SqliteConnectionManager;
     use rusqlite::params;
+
+    fn create_base(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>) {
+        let _ = conn.execute(
+            "CREATE TABLE \"Currency\" (
+            \"code\"	TEXT NOT NULL UNIQUE,
+            \"numeric_code\"	INTEGER NOT NULL UNIQUE,
+            \"minor_unit\"	INTEGER NOT NULL DEFAULT 2,
+            \"name\"	TEXT NOT NULL UNIQUE,
+            PRIMARY KEY(\"code\")
+            )",
+            params![],
+        );
+        let num = conn.execute(
+            "INSERT INTO Currency (code, numeric_code, minor_unit, name) VALUES ('GBP', '826', '2', 'Pound Sterling');",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Accounts\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"type\"	INTEGER NOT NULL,
+	        \"name\"	TEXT NOT NULL,
+	        \"currency\"	TEXT NOT NULL,
+	        FOREIGN KEY(\"currency\") REFERENCES \"Currency\"(\"code\")
+            )",
+            params![],
+        );
+
+        let num = conn.execute(
+            "INSERT INTO Accounts (type, name, currency) VALUES (0, \"Current\", \"GBP\")",
+            params![],
+        );
+
+        let num = conn.execute(
+            "INSERT INTO Accounts (type, name, currency) VALUES (1, \"Expenses\", \"GBP\")",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Transactions\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"date\"	TEXT NOT NULL,
+	        \"name\"	TEXT
+            )",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Credits\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"account\"	INTEGER NOT NULL,
+	        \"transaction_id\"	INTEGER NOT NULL,
+	        \"balance\"	INTEGER NOT NULL DEFAULT 0 CHECK (typeof(\"balance\") = 'integer'),
+	        FOREIGN KEY(\"account\") REFERENCES \"Accounts\"(\"id\"),
+	        FOREIGN KEY(\"transaction_id\") REFERENCES \"Transactions\"(\"id\") ON DELETE CASCADE
+            )",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Debits\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"account\"	INTEGER NOT NULL,
+	        \"transaction_id\"	INTEGER NOT NULL,
+	        \"balance\"	INTEGER NOT NULL DEFAULT 0 CHECK (typeof(\"balance\") = 'integer'),
+	        FOREIGN KEY(\"account\") REFERENCES \"Accounts\"(\"id\"),
+	        FOREIGN KEY(\"transaction_id\") REFERENCES \"Transactions\"(\"id\") ON DELETE CASCADE
+            )",
+            params![],
+        );
+    }
+
     #[test]
     fn lists_currencies_returns_struct() {
         let manager = SqliteConnectionManager::memory();
