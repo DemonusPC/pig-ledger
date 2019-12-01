@@ -89,6 +89,14 @@ fn main() -> io::Result<()> {
                             .route(web::get().to_async(api::get_account_balance)),
                     ),
             )
+            .service(
+                web::scope("/accounts")
+                    .service(web::resource("").route(web::get().to_async(api::index)))
+                    .service(
+                        web::resource("/asset")
+                            .route(web::get().to_async(api::list_asset_accounts)),
+                    ),
+            )
     };
 
     debug!("Starting server");

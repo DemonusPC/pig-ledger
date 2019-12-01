@@ -233,6 +233,18 @@ pub fn get_account_balance(
     }
 }
 
+pub fn list_asset_accounts(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let result =
+        db::list_accounts_filter_type(pool.get().unwrap(), datastruct::AccountType::Assets);
+
+    match result {
+        Ok(v) => ok(HttpResponse::Ok().json(v)),
+        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    }
+}
+
 pub fn list_currencies(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {

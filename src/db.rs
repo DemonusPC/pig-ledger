@@ -27,6 +27,30 @@ pub fn list_accounts(
     Ok(accounts)
 }
 
+pub fn list_accounts_filter_type(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    account_type: AccountType,
+) -> Result<(Vec<Account>)> {
+    let mut stmt = conn.prepare("SELECT id, type, name, currency from Accounts WHERE type = ?1")?;
+
+    let accounts = stmt
+        .query_map(params![account_type as i32], |row| {
+            Ok(Account {
+                id: row.get(0).unwrap(),
+                acc_type: AccountType::from_i32(row.get(1).unwrap()),
+                name: row.get(2).unwrap(),
+                currency: row.get(3).unwrap(),
+            })
+        })
+        .and_then(|mapped_rows| {
+            Ok(mapped_rows
+                .map(|row| row.unwrap())
+                .collect::<Vec<Account>>())
+        })?;
+
+    Ok(accounts)
+}
+
 pub fn list_transactions() -> Result<(Vec<Transaction>)> {
     let conn = Connection::open("ledger.db")?;
     let mut stmt = conn.prepare("SELECT id, date, name from Transactions ORDER BY date DESC")?;
