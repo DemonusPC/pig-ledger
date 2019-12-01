@@ -47,15 +47,25 @@ fn main() -> io::Result<()> {
             .wrap(Cors::new().send_wildcard().max_age(3600))
             .data(pool.clone())
             .service(web::resource("/").route(web::get().to_async(api::index)))
-            .service(
-                web::resource("/transactions").route(web::get().to_async(api::list_transactions)),
-            )
             .service(web::resource("/currencies").route(web::get().to_async(api::list_currencies)))
             .service(
-                web::scope("/transaction")
+                web::resource("/integrity").route(web::get().to_async(api::check_ledger_integrity)),
+            )
+            .service(
+                web::scope("/transactions")
+                    .service(web::resource("").route(web::get().to_async(api::list_transactions)))
                     .service(
-                        web::resource("/").route(web::post().to_async(api::create_transaction)),
+                        web::resource("/detail")
+                            .route(web::get().to_async(api::list_transactions_with_details)),
                     )
+                    .service(
+                        web::resource("/{year}/{month}")
+                            .route(web::get().to_async(api::get_transactions_date_scoped)),
+                    ),
+            )
+            .service(
+                web::scope("/transaction")
+                    .service(web::resource("").route(web::post().to_async(api::create_transaction)))
                     .service(
                         web::resource("/{id}")
                             .route(web::get().to_async(api::get_transaction))
