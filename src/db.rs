@@ -292,7 +292,7 @@ mod tests {
             )",
             params![],
         );
-        let num = conn.execute(
+        let _num = conn.execute(
             "INSERT INTO Currency (code, numeric_code, minor_unit, name) VALUES ('GBP', '826', '2', 'Pound Sterling');",
             params![],
         );
@@ -308,12 +308,12 @@ mod tests {
             params![],
         );
 
-        let num = conn.execute(
+        let _num = conn.execute(
             "INSERT INTO Accounts (type, name, currency) VALUES (0, \"Current\", \"GBP\")",
             params![],
         );
 
-        let num = conn.execute(
+        let _num = conn.execute(
             "INSERT INTO Accounts (type, name, currency) VALUES (1, \"Expenses\", \"GBP\")",
             params![],
         );
