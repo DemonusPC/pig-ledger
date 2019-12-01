@@ -95,6 +95,10 @@ fn main() -> io::Result<()> {
                     .service(
                         web::resource("/asset")
                             .route(web::get().to_async(api::list_asset_accounts)),
+                    )
+                    .service(
+                        web::resource("/expense")
+                            .route(web::get().to_async(api::list_expense_accounts)),
                     ),
             )
     };
