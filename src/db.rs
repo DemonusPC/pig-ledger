@@ -227,7 +227,7 @@ pub fn check_integrity(
                 .collect::<Vec<SqlResult>>())
         })?;
 
-    let result = if query[0].value == 0. { true } else { false };
+    let result = if query[0].value == 0 { true } else { false };
 
     Ok(result)
 }

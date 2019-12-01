@@ -95,7 +95,7 @@ pub struct Entry {
 
 #[derive(Debug, Serialize)]
 pub struct SqlResult {
-    pub value: f64,
+    pub value: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
