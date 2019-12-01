@@ -353,6 +353,17 @@ mod tests {
     }
 
     #[test]
+    fn create_transaction_test() {
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::new(manager).unwrap();
+        create_base(pool.get().unwrap());
+
+        let id = transaction(pool.get().unwrap(), 1, 2, 50, "Super Payment");
+
+        assert_eq!(id.unwrap(), 1);
+    }
+
+    #[test]
     fn lists_currencies_returns_struct() {
         let manager = SqliteConnectionManager::memory();
         let pool = r2d2::Pool::new(manager).unwrap();
