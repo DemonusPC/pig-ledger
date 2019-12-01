@@ -29,7 +29,7 @@ pub fn list_accounts(
 
 pub fn list_transactions() -> Result<(Vec<Transaction>)> {
     let conn = Connection::open("ledger.db")?;
-    let mut stmt = conn.prepare("SELECT id, date, name from Transactions")?;
+    let mut stmt = conn.prepare("SELECT id, date, name from Transactions ORDER BY date DESC")?;
 
     let transactions = stmt
         .query_map(NO_PARAMS, |row| {
@@ -57,7 +57,7 @@ pub fn list_transactions_date(
         "SELECT id, date, name from Transactions
         WHERE CAST(strftime('%m', date) as integer) = ?1 
         AND CAST(strftime('%Y', date) as integer) = ?2 
-        ORDER BY date",
+        ORDER BY date DESC",
     )?;
 
     let transactions = stmt
