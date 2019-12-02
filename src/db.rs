@@ -88,35 +88,6 @@ pub fn get_transaction(
     })
 }
 
-pub fn add_account(
-    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    acc_type: AccountType,
-    name: &str,
-    currency: &str,
-) -> Result<()> {
-    let con = conn.deref_mut();
-    let tx = con.transaction()?;
-
-    tx.execute(
-        "INSERT INTO Accounts (type, name, currency) VALUES (?1, ?2, ?3)",
-        params![acc_type as i32, name, currency],
-    )?;
-
-    tx.commit()
-}
-
-pub fn remove_account(
-    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    id: i32,
-) -> Result<()> {
-    let con = conn.deref_mut();
-    let tx = con.transaction()?;
-
-    tx.execute("DELETE FROM Accounts WHERE id = ?1", params![id])?;
-
-    tx.commit()
-}
-
 pub fn transaction(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     debit_account: i32,

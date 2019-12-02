@@ -8,7 +8,7 @@ use serde_json::json;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
-use crate::account::data::{Account, AccountType};
+use crate::account::data::{Account};
 use crate::datastruct;
 use crate::db;
 
@@ -165,49 +165,6 @@ pub fn get_transaction_detail(
     });
 
     ok(HttpResponse::Ok().json(result))
-}
-
-pub fn get_account(
-    params: web::Path<datastruct::IdRequest>,
-    pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
-    let conn = pool.get().unwrap();
-    let result = db::get_account(conn, params.id);
-
-    match result {
-        Ok(v) => ok(HttpResponse::Ok().json(v)),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
-    }
-}
-
-pub fn create_account(
-    account: web::Json<datastruct::NewAccount>,
-    pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
-    let account_type = AccountType::from_i32(account.acc_type);
-    let result = db::add_account(
-        pool.get().unwrap(),
-        account_type,
-        &account.name,
-        &account.currency,
-    );
-
-    match result {
-        Ok(v) => ok(HttpResponse::Ok().json(v)),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
-    }
-}
-
-pub fn delete_account(
-    params: web::Path<datastruct::IdRequest>,
-    pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
-    let result = db::remove_account(pool.get().unwrap(), params.id);
-
-    match result {
-        Ok(_v) => ok(HttpResponse::Ok().finish()),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
-    }
 }
 
 pub fn get_account_balance(

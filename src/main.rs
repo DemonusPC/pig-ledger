@@ -79,11 +79,11 @@ fn main() -> io::Result<()> {
             )
             .service(
                 web::scope("/account")
-                    .service(web::resource("/").route(web::post().to_async(api::create_account)))
+                    .service(web::resource("/").route(web::post().to_async(account::create_account)))
                     .service(
                         web::resource("/{id}")
-                            .route(web::get().to_async(api::get_account))
-                            .route(web::delete().to_async(api::delete_account)),
+                            .route(web::get().to_async(account::get_account))
+                            .route(web::delete().to_async(account::delete_account)),
                     )
                     .service(
                         web::resource("/{id}/balance")

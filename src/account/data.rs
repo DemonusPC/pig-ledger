@@ -41,3 +41,10 @@ pub struct DetailedAccount {
     pub balance: i32,
     pub currency: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NewAccount {
+    pub acc_type: i32,
+    pub name: String,
+    pub currency: String,
+}

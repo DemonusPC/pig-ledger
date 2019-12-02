@@ -26,13 +26,6 @@ pub struct NewTransaction {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct NewAccount {
-    pub acc_type: i32,
-    pub name: String,
-    pub currency: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct IdRequest {
     pub id: i32,
 }
