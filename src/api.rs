@@ -8,6 +8,7 @@ use serde_json::json;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
+use crate::account::data::AccountType;
 use crate::datastruct;
 use crate::db;
 
@@ -195,7 +196,7 @@ pub fn create_account(
     account: web::Json<datastruct::NewAccount>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
-    let account_type = datastruct::AccountType::from_i32(account.acc_type);
+    let account_type = AccountType::from_i32(account.acc_type);
     let result = db::add_account(
         pool.get().unwrap(),
         account_type,
@@ -233,23 +234,10 @@ pub fn get_account_balance(
     }
 }
 
-pub fn list_asset_accounts(
-    pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
-    let result =
-        db::list_accounts_filter_type(pool.get().unwrap(), datastruct::AccountType::Assets);
-
-    match result {
-        Ok(v) => ok(HttpResponse::Ok().json(v)),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
-    }
-}
-
 pub fn list_expense_accounts(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
-    let result =
-        db::list_accounts_filter_type(pool.get().unwrap(), datastruct::AccountType::Expenses);
+    let result = db::list_accounts_filter_type(pool.get().unwrap(), AccountType::Expenses);
 
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
@@ -289,7 +277,8 @@ pub fn check_ledger_integrity(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::datastruct::{Account, AccountType};
+    use crate::account::data::AccountType;
+    use crate::datastruct::Account;
 
     #[test]
     fn accounts_compatible() {

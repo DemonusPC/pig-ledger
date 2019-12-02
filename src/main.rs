@@ -15,6 +15,7 @@
 extern crate chrono;
 extern crate rusqlite;
 
+mod account;
 mod api;
 mod datastruct;
 mod db;
@@ -94,11 +95,11 @@ fn main() -> io::Result<()> {
                     .service(web::resource("").route(web::get().to_async(api::index)))
                     .service(
                         web::resource("/asset")
-                            .route(web::get().to_async(api::list_asset_accounts)),
+                            .route(web::get().to_async(account::list_asset_accounts)),
                     )
                     .service(
                         web::resource("/expense")
-                            .route(web::get().to_async(api::list_expense_accounts)),
+                            .route(web::get().to_async(account::list_expense_accounts)),
                     ),
             )
     };

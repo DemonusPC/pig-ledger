@@ -1,6 +1,7 @@
-use crate::datastruct::{
-    Account, AccountType, DetailedAccount, Currency, Entry, EntryType, SqlResult, Transaction,
-};
+use crate::datastruct::{Account, Currency, Entry, EntryType, SqlResult, Transaction};
+
+use crate::account::data::{AccountType, DetailedAccount};
+
 use rusqlite::{params, Connection, Result, NO_PARAMS};
 
 use chrono::{DateTime, Utc};
