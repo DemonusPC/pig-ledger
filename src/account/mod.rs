@@ -7,6 +7,18 @@ use r2d2_sqlite::SqliteConnectionManager;
 pub mod data;
 mod db;
 
+pub fn list_accounts(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let conn = pool.get().unwrap();
+    let result = db::list_accounts(conn);
+
+    match result {
+        Ok(v) => ok(HttpResponse::Ok().json(v)),
+        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    }
+}
+
 pub fn list_asset_accounts(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {

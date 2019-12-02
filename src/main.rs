@@ -47,7 +47,7 @@ fn main() -> io::Result<()> {
             .wrap(Logger::default())
             .wrap(Cors::new().send_wildcard().max_age(3600))
             .data(pool.clone())
-            .service(web::resource("/").route(web::get().to_async(api::index)))
+            .service(web::resource("/").route(web::get().to_async(account::list_accounts)))
             .service(web::resource("/currencies").route(web::get().to_async(api::list_currencies)))
             .service(
                 web::resource("/integrity").route(web::get().to_async(api::check_ledger_integrity)),
@@ -92,7 +92,7 @@ fn main() -> io::Result<()> {
             )
             .service(
                 web::scope("/accounts")
-                    .service(web::resource("").route(web::get().to_async(api::index)))
+                    .service(web::resource("").route(web::get().to_async(account::list_accounts)))
                     .service(
                         web::resource("/asset")
                             .route(web::get().to_async(account::list_asset_accounts)),

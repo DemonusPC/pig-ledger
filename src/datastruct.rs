@@ -1,8 +1,6 @@
 use chrono::Utc;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::account::data::AccountType;
-
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Copy, Clone)]
 pub enum EntryType {
     Debit,
@@ -17,14 +15,6 @@ impl EntryType {
             _ => panic!("Unknown value: {}", value),
         }
     }
-}
-
-#[derive(Debug, Serialize)]
-pub struct Account {
-    pub id: i32,
-    pub acc_type: AccountType,
-    pub name: String,
-    pub currency: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

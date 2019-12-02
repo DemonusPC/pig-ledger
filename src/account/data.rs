@@ -26,6 +26,14 @@ impl AccountType {
 }
 
 #[derive(Debug, Serialize)]
+pub struct Account {
+    pub id: i32,
+    pub acc_type: AccountType,
+    pub name: String,
+    pub currency: String,
+}
+
+#[derive(Debug, Serialize)]
 pub struct DetailedAccount {
     pub id: i32,
     pub acc_type: AccountType,
