@@ -15,6 +15,7 @@
 extern crate chrono;
 extern crate rusqlite;
 
+mod account;
 mod api;
 mod datastruct;
 mod db;
@@ -46,7 +47,7 @@ fn main() -> io::Result<()> {
             .wrap(Logger::default())
             .wrap(Cors::new().send_wildcard().max_age(3600))
             .data(pool.clone())
-            .service(web::resource("/").route(web::get().to_async(api::index)))
+            .service(web::resource("/").route(web::get().to_async(account::list_accounts)))
             .service(web::resource("/currencies").route(web::get().to_async(api::list_currencies)))
             .service(
                 web::resource("/integrity").route(web::get().to_async(api::check_ledger_integrity)),
@@ -78,15 +79,29 @@ fn main() -> io::Result<()> {
             )
             .service(
                 web::scope("/account")
-                    .service(web::resource("/").route(web::post().to_async(api::create_account)))
+                    .service(
+                        web::resource("/").route(web::post().to_async(account::create_account)),
+                    )
                     .service(
                         web::resource("/{id}")
-                            .route(web::get().to_async(api::get_account))
-                            .route(web::delete().to_async(api::delete_account)),
+                            .route(web::get().to_async(account::get_account))
+                            .route(web::delete().to_async(account::delete_account)),
                     )
                     .service(
                         web::resource("/{id}/balance")
                             .route(web::get().to_async(api::get_account_balance)),
+                    ),
+            )
+            .service(
+                web::scope("/accounts")
+                    .service(web::resource("").route(web::get().to_async(account::list_accounts)))
+                    .service(
+                        web::resource("/asset")
+                            .route(web::get().to_async(account::list_asset_accounts)),
+                    )
+                    .service(
+                        web::resource("/expense")
+                            .route(web::get().to_async(account::list_expense_accounts)),
                     ),
             )
     };
