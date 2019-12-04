@@ -102,3 +102,162 @@ pub fn list_accounts_filter_type(
 
     Ok(accounts)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use r2d2_sqlite::SqliteConnectionManager;
+    use rusqlite::params;
+
+    #[test]
+    fn is_able_to_add_and_select_an_account() {
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::new(manager).unwrap();
+        let conn = pool.get().unwrap();
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Currency\" (
+            \"code\"	TEXT NOT NULL UNIQUE,
+            \"numeric_code\"	INTEGER NOT NULL UNIQUE,
+            \"minor_unit\"	INTEGER NOT NULL DEFAULT 2,
+            \"name\"	TEXT NOT NULL UNIQUE,
+            PRIMARY KEY(\"code\")
+            )",
+            params![],
+        );
+        let _num = conn.execute(
+            "INSERT INTO Currency (code, numeric_code, minor_unit, name) VALUES ('GBP', '826', '2', 'Pound Sterling');",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Accounts\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"type\"	INTEGER NOT NULL,
+	        \"name\"	TEXT NOT NULL,
+	        \"currency\"	TEXT NOT NULL,
+	        FOREIGN KEY(\"currency\") REFERENCES \"Currency\"(\"code\")
+            )",
+            params![],
+        );
+
+        let add_result = add_account(conn, AccountType::Assets, "Dank", "GBP");
+
+        assert!(add_result.is_ok(), true);
+
+        let account = get_account(pool.get().unwrap(), 1).unwrap();
+
+        assert_eq!(account.name, "Dank");
+        assert_eq!(account.acc_type, AccountType::Assets);
+        assert_eq!(account.currency, "GBP")
+    }
+
+    #[test]
+    fn can_get_all_accounts() {
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::new(manager).unwrap();
+        let conn = pool.get().unwrap();
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Currency\" (
+            \"code\"	TEXT NOT NULL UNIQUE,
+            \"numeric_code\"	INTEGER NOT NULL UNIQUE,
+            \"minor_unit\"	INTEGER NOT NULL DEFAULT 2,
+            \"name\"	TEXT NOT NULL UNIQUE,
+            PRIMARY KEY(\"code\")
+            )",
+            params![],
+        );
+        let _num = conn.execute(
+            "INSERT INTO Currency (code, numeric_code, minor_unit, name) VALUES ('GBP', '826', '2', 'Pound Sterling');",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Accounts\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"type\"	INTEGER NOT NULL,
+	        \"name\"	TEXT NOT NULL,
+	        \"currency\"	TEXT NOT NULL,
+	        FOREIGN KEY(\"currency\") REFERENCES \"Currency\"(\"code\")
+            )",
+            params![],
+        );
+
+        let _ = add_account(conn, AccountType::Assets, "Dank", "GBP");
+        let _ = add_account(pool.get().unwrap(), AccountType::Expenses, "Food", "GBP");
+        let _ = add_account(pool.get().unwrap(), AccountType::Revenue, "Dab", "GBP");
+
+        let accounts: Vec<Account> = list_accounts(pool.get().unwrap()).unwrap();
+
+        assert_eq!(accounts.len(), 3)
+    }
+
+    #[test]
+    fn can_filter_account_list_by_type() {
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::new(manager).unwrap();
+        let conn = pool.get().unwrap();
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Currency\" (
+            \"code\"	TEXT NOT NULL UNIQUE,
+            \"numeric_code\"	INTEGER NOT NULL UNIQUE,
+            \"minor_unit\"	INTEGER NOT NULL DEFAULT 2,
+            \"name\"	TEXT NOT NULL UNIQUE,
+            PRIMARY KEY(\"code\")
+            )",
+            params![],
+        );
+        let _num = conn.execute(
+            "INSERT INTO Currency (code, numeric_code, minor_unit, name) VALUES ('GBP', '826', '2', 'Pound Sterling');",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Credits\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"account\"	INTEGER NOT NULL,
+	        \"transaction_id\"	INTEGER NOT NULL,
+	        \"balance\"	INTEGER NOT NULL DEFAULT 0 CHECK (typeof(\"balance\") = 'integer'),
+	        FOREIGN KEY(\"account\") REFERENCES \"Accounts\"(\"id\"),
+	        FOREIGN KEY(\"transaction_id\") REFERENCES \"Transactions\"(\"id\") ON DELETE CASCADE
+            )",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Debits\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"account\"	INTEGER NOT NULL,
+	        \"transaction_id\"	INTEGER NOT NULL,
+	        \"balance\"	INTEGER NOT NULL DEFAULT 0 CHECK (typeof(\"balance\") = 'integer'),
+	        FOREIGN KEY(\"account\") REFERENCES \"Accounts\"(\"id\"),
+	        FOREIGN KEY(\"transaction_id\") REFERENCES \"Transactions\"(\"id\") ON DELETE CASCADE
+            )",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Accounts\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"type\"	INTEGER NOT NULL,
+	        \"name\"	TEXT NOT NULL,
+	        \"currency\"	TEXT NOT NULL,
+	        FOREIGN KEY(\"currency\") REFERENCES \"Currency\"(\"code\")
+            )",
+            params![],
+        );
+
+        let _ = add_account(conn, AccountType::Assets, "Dank", "GBP");
+        let _ = add_account(pool.get().unwrap(), AccountType::Expenses, "Food", "GBP");
+        let _ = add_account(pool.get().unwrap(), AccountType::Revenue, "Dab", "GBP");
+
+        let accounts: Vec<DetailedAccount> =
+            list_accounts_filter_type(pool.get().unwrap(), AccountType::Assets).unwrap();
+
+        assert_eq!(accounts.len(), 1);
+        assert_eq!(accounts[0].name, "Dank");
+    }
+
+}

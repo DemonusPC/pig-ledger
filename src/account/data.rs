@@ -48,3 +48,27 @@ pub struct NewAccount {
     pub name: String,
     pub currency: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accounttype_correctly_types() {
+        let asset = AccountType::from_i32(0);
+        let liabilities = AccountType::from_i32(1);
+        let equities = AccountType::from_i32(2);
+        let revenue = AccountType::from_i32(3);
+        let expenses = AccountType::from_i32(4);
+        let gains = AccountType::from_i32(5);
+        let losses = AccountType::from_i32(6);
+
+        assert_eq!(asset, AccountType::Assets);
+        assert_eq!(liabilities, AccountType::Liabilities);
+        assert_eq!(equities, AccountType::Equities);
+        assert_eq!(revenue, AccountType::Revenue);
+        assert_eq!(expenses, AccountType::Expenses);
+        assert_eq!(gains, AccountType::Gains);
+        assert_eq!(losses, AccountType::Losses)
+    }
+}

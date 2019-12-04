@@ -79,7 +79,9 @@ fn main() -> io::Result<()> {
             )
             .service(
                 web::scope("/account")
-                    .service(web::resource("/").route(web::post().to_async(account::create_account)))
+                    .service(
+                        web::resource("/").route(web::post().to_async(account::create_account)),
+                    )
                     .service(
                         web::resource("/{id}")
                             .route(web::get().to_async(account::get_account))

@@ -8,7 +8,7 @@ use serde_json::json;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
-use crate::account::data::{Account};
+use crate::account::data::Account;
 use crate::datastruct;
 use crate::db;
 
