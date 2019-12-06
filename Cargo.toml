@@ -22,6 +22,8 @@ env_logger = "0.7.0"
 r2d2 = "0.8.6"
 r2d2_sqlite = "0.12.0"
 
+uuid = { version = "0.8", features = ["serde", "v4", "v5"] }
+
 [dependencies.rusqlite]
 version = "0.20.0"
 features = ["bundled", "chrono"]

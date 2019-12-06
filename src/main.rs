@@ -17,6 +17,7 @@ extern crate rusqlite;
 
 mod account;
 mod api;
+mod budget;
 mod datastruct;
 mod db;
 
@@ -103,6 +104,11 @@ fn main() -> io::Result<()> {
                         web::resource("/expense")
                             .route(web::get().to_async(account::list_expense_accounts)),
                     ),
+            )
+            .service(
+                web::scope("/budget")
+                    .service(web::resource("").route(web::post().to_async(budget::create_budget)))
+                    .service(web::resource("/{id}").route(web::get().to_async(budget::get_budget))),
             )
     };
 

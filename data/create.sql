@@ -37,3 +37,11 @@ CREATE TABLE "Currency" (
 	"name"	TEXT NOT NULL UNIQUE,
 	PRIMARY KEY("code")
 )
+
+CREATE TABLE "Budgets" (
+	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	"name"	TEXT,
+	"open"	TEXT NOT NULL,
+	"close"	TEXT NOT NULL,
+	"target"	TEXT NOT NULL
+)
