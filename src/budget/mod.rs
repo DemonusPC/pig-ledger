@@ -24,6 +24,19 @@ pub fn get_budget(
     }
 }
 
+pub fn delete_budget(
+    params: web::Path<datastruct::IdRequest>,
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let conn = pool.get().unwrap();
+    let result = db::remove_budget(conn, params.id);
+
+    match result {
+        Ok(_v) => ok(HttpResponse::Ok().finish()),
+        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    }
+}
+
 pub fn create_budget(
     budget_request: web::Json<data::NewBudget>,
     pool: web::Data<Pool<SqliteConnectionManager>>,

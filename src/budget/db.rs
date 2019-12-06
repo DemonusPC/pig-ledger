@@ -20,6 +20,18 @@ pub fn get_budget(
     })
 }
 
+pub fn remove_budget(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    id: i32,
+) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+
+    tx.execute("DELETE FROM Budgets WHERE id = ?1", params![id])?;
+
+    tx.commit()
+}
+
 pub fn create_budget(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     budget: &Budget,
