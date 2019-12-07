@@ -51,7 +51,16 @@ pub fn create_budget(
     }
 
     let open_utc = open_time.unwrap().with_timezone(&Utc);
-    let close_utc = close_time.unwrap().with_timezone(&Utc);
+    let close_utc = close_time.unwrap().with_timezone(&Utc) + Duration::hours(1);
+
+    if db::check_if_budget_exists(pool.get().unwrap(), open_utc, close_utc).unwrap() == true {
+        error!(
+            "Budget already exists for {open} - {close}",
+            open = close_utc,
+            close = close_utc
+        );
+        return ok(HttpResponse::Conflict().finish());
+    }
 
     if close_utc < open_utc {
         error!(
@@ -68,7 +77,10 @@ pub fn create_budget(
 
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        Err(e) => {
+            error!("Create current budget failed with {error}.", error = e);
+            ok(HttpResponse::InternalServerError().finish())
+            },
     }
 }
 
@@ -86,7 +98,12 @@ pub fn get_current_budget(
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
         Err(e) => {
-            error!("Get current budget failed with {error}.", error = e);
+            
+            if e == rusqlite::Error::QueryReturnedNoRows {
+                warn!("No monthly budget specified");
+                return ok(HttpResponse::NotFound().finish())
+            }
+            error!("Get current budget failed with {error}", error = e);
             ok(HttpResponse::InternalServerError().finish())
         }
     }
