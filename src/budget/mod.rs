@@ -49,11 +49,18 @@ pub fn create_budget(
         return ok(HttpResponse::BadRequest().finish());
     }
 
+    let open_utc = open_time.unwrap().with_timezone(&Utc);
+    let close_utc = close_time.unwrap().with_timezone(&Utc);
+
+    if close_utc < open_utc {
+        return ok(HttpResponse::BadRequest().finish());
+    }
+
     let parsed_budget = data::Budget::new(
         -1,
         &budget_request.name,
-        open_time.unwrap().with_timezone(&Utc),
-        close_time.unwrap().with_timezone(&Utc),
+        open_utc,
+        close_utc,
         &target,
     );
 
