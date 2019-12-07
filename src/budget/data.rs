@@ -7,6 +7,7 @@ pub struct Budget {
     pub name: String,
     pub open: chrono::DateTime<Utc>,
     pub close: chrono::DateTime<Utc>,
+    #[serde(skip)]
     target: String,
 }
 
