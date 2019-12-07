@@ -76,7 +76,7 @@ pub fn create_budget(
     let result = db::create_budget(pool.get().unwrap(), &parsed_budget);
 
     match result {
-        Ok(v) => ok(HttpResponse::Ok().json(v)),
+        Ok(v) => ok(HttpResponse::Created().json(v)),
         Err(e) => {
             error!("Create current budget failed with {error}.", error = e);
             ok(HttpResponse::InternalServerError().finish())
