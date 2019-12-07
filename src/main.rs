@@ -35,7 +35,8 @@ use r2d2_sqlite::SqliteConnectionManager;
 use env_logger;
 
 fn main() -> io::Result<()> {
-    std::env::set_var("RUST_LOG", "actix_web=info");
+    // std::env::set_var("RUST_LOG", "actix_web=info");
+    std::env::set_var("RUST_LOG", "info");
     env_logger::init();
 
     let manager = SqliteConnectionManager::file("ledger.db");
@@ -107,12 +108,16 @@ fn main() -> io::Result<()> {
             )
             .service(
                 web::scope("/budget")
-                    .service(web::resource("").route(web::post().to_async(budget::create_budget)))
+                    .service(
+                        web::resource("")
+                            .route(web::get().to_async(budget::get_current_budget))
+                            .route(web::post().to_async(budget::create_budget)),
+                    )
                     .service(
                         web::resource("/{id}")
                             .route(web::get().to_async(budget::get_budget))
                             .route(web::delete().to_async(budget::delete_budget)),
-                    )
+                    ),
             )
     };
 

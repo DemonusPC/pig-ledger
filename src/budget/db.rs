@@ -1,4 +1,5 @@
 use crate::budget::data::Budget;
+use chrono::Utc;
 use rusqlite::{params, Result};
 use std::ops::DerefMut;
 
@@ -52,4 +53,22 @@ pub fn create_budget(
         Ok(_) => Ok(budget_id),
         Err(_) => panic!("Budget creation has failed"),
     }
+}
+
+pub fn get_budget_by_date(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    start: chrono::DateTime<Utc>,
+    end: chrono::DateTime<Utc>,
+) -> Result<(Budget)> {
+    let mut stmt = conn.prepare("SELECT * from Budgets WHERE open >= ?1 AND close < ?2;")?;
+
+    stmt.query_row(params![start, end], |row| {
+        Ok(Budget::new(
+            row.get(0).unwrap(),
+            &row.get(1).unwrap(),
+            row.get(2).unwrap(),
+            row.get(3).unwrap(),
+            &row.get(4).unwrap(),
+        ))
+    })
 }

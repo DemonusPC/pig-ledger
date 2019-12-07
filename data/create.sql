@@ -45,3 +45,9 @@ CREATE TABLE "Budgets" (
 	"close"	TEXT NOT NULL,
 	"target"	TEXT NOT NULL
 )
+
+CREATE TABLE "BudgetExample" (
+	"id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+	"account"	INTEGER NOT NULL UNIQUE,
+	"balance"	INTEGER NOT NULL DEFAULT 0
+)

@@ -1,5 +1,6 @@
+use crate::chrono::Datelike;
 use actix_web::{web, Error, HttpResponse};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use futures::future::ok;
 use futures::future::Future;
 use r2d2::Pool;
@@ -53,21 +54,40 @@ pub fn create_budget(
     let close_utc = close_time.unwrap().with_timezone(&Utc);
 
     if close_utc < open_utc {
+        error!(
+            "Wrong Request. {close} is smaller than {open}",
+            close = close_utc,
+            open = open_utc
+        );
         return ok(HttpResponse::BadRequest().finish());
     }
 
-    let parsed_budget = data::Budget::new(
-        -1,
-        &budget_request.name,
-        open_utc,
-        close_utc,
-        &target,
-    );
+    let parsed_budget = data::Budget::new(-1, &budget_request.name, open_utc, close_utc, &target);
 
     let result = db::create_budget(pool.get().unwrap(), &parsed_budget);
 
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
         Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    }
+}
+
+pub fn get_current_budget(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let conn = pool.get().unwrap();
+
+    let now = chrono::offset::Utc::now();
+    let start_month = Utc.ymd(now.year(), now.month(), 1).and_hms(0, 0, 0);
+    let end_month = now + (Duration::weeks(4) - Duration::days(1));
+
+    let result = db::get_budget_by_date(conn, start_month, end_month);
+
+    match result {
+        Ok(v) => ok(HttpResponse::Ok().json(v)),
+        Err(e) => {
+            error!("Get current budget failed with {error}.", error = e);
+            ok(HttpResponse::InternalServerError().finish())
+        }
     }
 }
