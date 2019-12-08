@@ -51,9 +51,12 @@ pub fn create_budget(
     }
 
     let open_utc = open_time.unwrap().with_timezone(&Utc);
-    let close_utc = close_time.unwrap().with_timezone(&Utc) + Duration::hours(1);
+    let close_utc = close_time.unwrap().with_timezone(&Utc);
 
-    if db::check_if_budget_exists(pool.get().unwrap(), open_utc, close_utc).unwrap() == true {
+    if db::check_if_budget_exists(pool.get().unwrap(), open_utc, close_utc + Duration::days(1))
+        .unwrap()
+        == true
+    {
         error!(
             "Budget already exists for {open} - {close}",
             open = close_utc,
@@ -80,7 +83,7 @@ pub fn create_budget(
         Err(e) => {
             error!("Create current budget failed with {error}.", error = e);
             ok(HttpResponse::InternalServerError().finish())
-            },
+        }
     }
 }
 
@@ -98,13 +101,24 @@ pub fn get_current_budget(
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
         Err(e) => {
-            
             if e == rusqlite::Error::QueryReturnedNoRows {
                 warn!("No monthly budget specified");
-                return ok(HttpResponse::NotFound().finish())
+                return ok(HttpResponse::NotFound().finish());
             }
             error!("Get current budget failed with {error}", error = e);
             ok(HttpResponse::InternalServerError().finish())
         }
+    }
+}
+
+pub fn add_entry_to_budget(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+    entry: web::Json<data::NewBudgetEntry>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let parsed_entry = entry.into_inner();
+    let result = db::add_budget_entry(pool.get().unwrap(), parsed_entry);
+    match result {
+        Ok(v) => ok(HttpResponse::Ok().json(v)),
+        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
     }
 }

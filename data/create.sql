@@ -51,3 +51,14 @@ CREATE TABLE "BudgetExample" (
 	"account"	INTEGER NOT NULL UNIQUE,
 	"balance"	INTEGER NOT NULL DEFAULT 0
 )
+
+
+CREATE TABLE "BudgetEntries" (
+	"id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+	"account"	INTEGER,
+	"budget"	INTEGER,
+	"balance"	INTEGER,
+	FOREIGN KEY("budget") REFERENCES "Budgets"("id"),
+	FOREIGN KEY("account") REFERENCES "Accounts"("id"),
+	UNIQUE("account", "budget")
+)

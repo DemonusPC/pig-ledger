@@ -39,3 +39,20 @@ pub struct NewBudget {
     pub open: String,
     pub close: String,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct BudgetEntry {
+    pub id: i32,
+    pub account: i32,
+    pub budget: i32,
+    pub balance: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NewBudgetEntry {
+    pub account: i32,
+    pub budget: i32,
+    pub balance: i32,
+}
+
+

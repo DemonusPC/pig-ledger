@@ -1,4 +1,4 @@
-use crate::budget::data::Budget;
+use crate::budget::data::{Budget, NewBudgetEntry};
 use crate::datastruct::SqlResult;
 use chrono::Utc;
 use rusqlite::{params, Result};
@@ -79,9 +79,8 @@ pub fn check_if_budget_exists(
     start: chrono::DateTime<Utc>,
     end: chrono::DateTime<Utc>,
 ) -> Result<(bool)> {
-    let mut stmt = conn.prepare(
-        "SELECT EXISTS(SELECT * from Budgets WHERE open >= ?1 AND close < ?2);",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT EXISTS(SELECT * from Budgets WHERE open >= ?1 AND close < ?2);")?;
 
     let result = stmt
         .query_row(params![start, end], |row| {
@@ -96,4 +95,19 @@ pub fn check_if_budget_exists(
     } else {
         Ok(true)
     }
+}
+
+pub fn add_budget_entry(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    entry: NewBudgetEntry,
+) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+
+    tx.execute(
+        "INSERT INTO BudgetEntries (account, budget, balance) VALUES (?1, ?2, ?3)",
+        params![entry.account, entry.budget, entry.balance],
+    )?;
+
+    tx.commit()
 }
