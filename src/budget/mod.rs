@@ -5,6 +5,7 @@ use futures::future::ok;
 use futures::future::Future;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
+use serde_json::json;
 use uuid::Uuid;
 
 pub mod data;
@@ -17,12 +18,20 @@ pub fn get_budget(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let conn = pool.get().unwrap();
-    let result = db::get_budget(conn, params.id);
+    let budget = db::get_budget(conn, params.id);
+    let budget_entries = db::list_budget_entries(pool.get().unwrap(), params.id);
 
-    match result {
-        Ok(v) => ok(HttpResponse::Ok().json(v)),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    if budget.is_err() || budget_entries.is_err() {
+        error!("Get Budget failed");
+        return ok(HttpResponse::InternalServerError().finish());
     }
+
+    let result = json!({
+        "budget": budget.unwrap(),
+        "entries": budget_entries.unwrap(),
+    });
+
+    ok(HttpResponse::Ok().json(result))
 }
 
 pub fn delete_budget(

@@ -1,4 +1,4 @@
-use crate::budget::data::{Budget, NewBudgetEntry};
+use crate::budget::data::{Budget, BudgetEntry, NewBudgetEntry};
 use crate::datastruct::SqlResult;
 use chrono::Utc;
 use rusqlite::{params, Result};
@@ -110,4 +110,29 @@ pub fn add_budget_entry(
     )?;
 
     tx.commit()
+}
+
+pub fn list_budget_entries(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    budget: i32,
+) -> Result<(Vec<BudgetEntry>)> {
+    let mut stmt =
+        conn.prepare("SELECT id, account, budget, balance FROM BudgetEntries WHERE budget = ?1;")?;
+
+    let result = stmt
+        .query_map(params![budget], |row| {
+            Ok(BudgetEntry {
+                id: row.get(0).unwrap(),
+                account: row.get(1).unwrap(),
+                budget: row.get(2).unwrap(),
+                balance: row.get(3).unwrap(),
+            })
+        })
+        .and_then(|mapped_rows| {
+            Ok(mapped_rows
+                .map(|row| row.unwrap())
+                .collect::<Vec<BudgetEntry>>())
+        })?;
+
+    Ok(result)
 }

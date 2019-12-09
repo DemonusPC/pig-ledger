@@ -40,7 +40,7 @@ pub struct NewBudget {
     pub close: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BudgetEntry {
     pub id: i32,
     pub account: i32,
@@ -54,5 +54,3 @@ pub struct NewBudgetEntry {
     pub budget: i32,
     pub balance: i32,
 }
-
-
