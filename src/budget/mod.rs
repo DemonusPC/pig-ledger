@@ -6,7 +6,6 @@ use futures::future::Future;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use serde_json::json;
-use uuid::Uuid;
 
 pub mod data;
 mod db;
@@ -51,7 +50,6 @@ pub fn create_budget(
     budget_request: web::Json<data::NewBudget>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
-    let target = Uuid::new_v4().to_simple().to_string();
     let open_time = DateTime::parse_from_rfc3339(&budget_request.open);
     let close_time = DateTime::parse_from_rfc3339(&budget_request.close);
 
@@ -83,7 +81,7 @@ pub fn create_budget(
         return ok(HttpResponse::BadRequest().finish());
     }
 
-    let parsed_budget = data::Budget::new(-1, &budget_request.name, open_utc, close_utc, &target);
+    let parsed_budget = data::Budget::new(-1, &budget_request.name, open_utc, close_utc);
 
     let result = db::create_budget(pool.get().unwrap(), &parsed_budget);
 
@@ -163,7 +161,6 @@ pub fn generate_budget(
     budget_request: web::Json<data::NewBudget>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
-    let target = Uuid::new_v4().to_simple().to_string();
     let open_time = DateTime::parse_from_rfc3339(&budget_request.open);
     let close_time = DateTime::parse_from_rfc3339(&budget_request.close);
 
@@ -195,7 +192,7 @@ pub fn generate_budget(
         return ok(HttpResponse::BadRequest().finish());
     }
 
-    let parsed_budget = data::Budget::new(-1, &budget_request.name, open_utc, close_utc, &target);
+    let parsed_budget = data::Budget::new(-1, &budget_request.name, open_utc, close_utc);
 
     let result = db::generate_budget(pool.get().unwrap(), &parsed_budget);
 

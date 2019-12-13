@@ -9,7 +9,7 @@ pub fn get_budget(
     id: i32,
 ) -> Result<(Budget)> {
     let mut stmt =
-        conn.prepare("SELECT id, name, open, close, target FROM Budgets WHERE id = ?1")?;
+        conn.prepare("SELECT id, name, open, close FROM Budgets WHERE id = ?1")?;
 
     stmt.query_row(params![id], |row| {
         Ok(Budget::new(
@@ -17,7 +17,6 @@ pub fn get_budget(
             &row.get(1).unwrap(),
             row.get(2).unwrap(),
             row.get(3).unwrap(),
-            &row.get(4).unwrap(),
         ))
     })
 }
@@ -42,8 +41,8 @@ pub fn create_budget(
     let tx = con.transaction()?;
 
     tx.execute(
-        "INSERT INTO Budgets (name, open, close, target) VALUES (?1, ?2, ?3, ?4)",
-        params![budget.name, budget.open, budget.close, budget.get_target()],
+        "INSERT INTO Budgets (name, open, close) VALUES (?1, ?2, ?3)",
+        params![budget.name, budget.open, budget.close],
     )?;
 
     let budget_id = tx.last_insert_rowid();
@@ -69,7 +68,6 @@ pub fn get_budget_by_date(
             &row.get(1).unwrap(),
             row.get(2).unwrap(),
             row.get(3).unwrap(),
-            &row.get(4).unwrap(),
         ))
     })
 }
@@ -170,7 +168,6 @@ pub fn list_budget_entries(
     Ok(result)
 }
 
-
 pub fn generate_budget(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     budget: &Budget,
@@ -179,8 +176,8 @@ pub fn generate_budget(
     let tx = con.transaction()?;
 
     tx.execute(
-        "INSERT INTO Budgets (name, open, close, target) VALUES (?1, ?2, ?3, ?4)",
-        params![budget.name, budget.open, budget.close, budget.get_target()],
+        "INSERT INTO Budgets (name, open, close) VALUES (?1, ?2, ?3)",
+        params![budget.name, budget.open, budget.close],
     )?;
 
     let budget_id = tx.last_insert_rowid();

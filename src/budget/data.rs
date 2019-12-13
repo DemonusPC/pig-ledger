@@ -7,8 +7,6 @@ pub struct Budget {
     pub name: String,
     pub open: chrono::DateTime<Utc>,
     pub close: chrono::DateTime<Utc>,
-    #[serde(skip)]
-    target: String,
 }
 
 impl Budget {
@@ -17,19 +15,13 @@ impl Budget {
         name: &String,
         open: chrono::DateTime<Utc>,
         close: chrono::DateTime<Utc>,
-        target: &String,
     ) -> Budget {
         Budget {
             id: id,
             name: String::from(name),
             open: open,
             close: close,
-            target: String::from(target),
         }
-    }
-
-    pub fn get_target(&self) -> &String {
-        return &self.target;
     }
 }
 

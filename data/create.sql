@@ -43,7 +43,6 @@ CREATE TABLE "Budgets" (
 	"name"	TEXT,
 	"open"	TEXT NOT NULL,
 	"close"	TEXT NOT NULL,
-	"target"	TEXT NOT NULL
 )
 
 CREATE TABLE "BudgetExample" (

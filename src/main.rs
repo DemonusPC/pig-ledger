@@ -115,7 +115,7 @@ fn main() -> io::Result<()> {
                     )
                     .service(
                         web::resource("/generate")
-                            .route(web::post().to_async(budget::generate_budget))
+                            .route(web::post().to_async(budget::generate_budget)),
                     )
                     .service(
                         web::scope("/{id}")
