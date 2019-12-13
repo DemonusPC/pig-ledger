@@ -58,7 +58,7 @@ CREATE TABLE "BudgetEntries" (
 	"account"	INTEGER,
 	"budget"	INTEGER,
 	"balance"	INTEGER,
-	FOREIGN KEY("budget") REFERENCES "Budgets"("id"),
+	FOREIGN KEY("budget") REFERENCES "Budgets"("id") ON DELETE CASCADE,
 	FOREIGN KEY("account") REFERENCES "Accounts"("id"),
 	UNIQUE("account", "budget")
 )
