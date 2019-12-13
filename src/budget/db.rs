@@ -129,6 +129,22 @@ pub fn update_budget_entry(
     tx.commit()
 }
 
+pub fn delete_budget_entry(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    budget_id: i32,
+    entry: NewBudgetEntry,
+) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+
+    tx.execute(
+        "DELETE FROM BudgetEntries WHERE account = ?1 AND budget = ?2",
+        params![entry.account, budget_id],
+    )?;
+
+    tx.commit()
+}
+
 pub fn list_budget_entries(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     budget: i32,

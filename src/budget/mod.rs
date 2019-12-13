@@ -145,3 +145,16 @@ pub fn update_entry_in_budget(
         Err(_e) => ok(HttpResponse::InternalServerError().finish()),
     }
 }
+
+pub fn delete_entry_in_budget(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+    params: web::Path<datastruct::IdRequest>,
+    entry: web::Json<data::NewBudgetEntry>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let parsed_entry = entry.into_inner();
+    let result = db::delete_budget_entry(pool.get().unwrap(), params.id, parsed_entry);
+    match result {
+        Ok(_v) => ok(HttpResponse::Ok().json(true)),
+        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+    }
+}
