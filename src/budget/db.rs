@@ -8,8 +8,7 @@ pub fn get_budget(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
 ) -> Result<(Budget)> {
-    let mut stmt =
-        conn.prepare("SELECT id, name, open, close FROM Budgets WHERE id = ?1")?;
+    let mut stmt = conn.prepare("SELECT id, name, open, close FROM Budgets WHERE id = ?1")?;
 
     stmt.query_row(params![id], |row| {
         Ok(Budget::new(
