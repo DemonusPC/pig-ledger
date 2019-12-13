@@ -169,3 +169,32 @@ pub fn list_budget_entries(
 
     Ok(result)
 }
+
+
+pub fn generate_budget(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    budget: &Budget,
+) -> Result<(i64)> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+
+    tx.execute(
+        "INSERT INTO Budgets (name, open, close, target) VALUES (?1, ?2, ?3, ?4)",
+        params![budget.name, budget.open, budget.close, budget.get_target()],
+    )?;
+
+    let budget_id = tx.last_insert_rowid();
+
+    tx.execute(
+        "INSERT INTO BudgetEntries (account, budget, balance)
+        SELECT id, ?1, 0 FROM Accounts WHERE Accounts.type = 4;",
+        params![budget_id],
+    )?;
+
+    let transaction_result = tx.commit();
+
+    match transaction_result {
+        Ok(_) => Ok(budget_id),
+        Err(_) => panic!("Budget creation has failed"),
+    }
+}

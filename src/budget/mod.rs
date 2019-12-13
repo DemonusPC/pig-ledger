@@ -158,3 +158,52 @@ pub fn delete_entry_in_budget(
         Err(_e) => ok(HttpResponse::InternalServerError().finish()),
     }
 }
+
+pub fn generate_budget(
+    budget_request: web::Json<data::NewBudget>,
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> impl Future<Item = HttpResponse, Error = Error> {
+    let target = Uuid::new_v4().to_simple().to_string();
+    let open_time = DateTime::parse_from_rfc3339(&budget_request.open);
+    let close_time = DateTime::parse_from_rfc3339(&budget_request.close);
+
+    if open_time.is_err() || close_time.is_err() {
+        return ok(HttpResponse::BadRequest().finish());
+    }
+
+    let open_utc = open_time.unwrap().with_timezone(&Utc);
+    let close_utc = close_time.unwrap().with_timezone(&Utc);
+
+    if db::check_if_budget_exists(pool.get().unwrap(), open_utc, close_utc + Duration::days(1))
+        .unwrap()
+        == true
+    {
+        error!(
+            "Budget already exists for {open} - {close}",
+            open = close_utc,
+            close = close_utc
+        );
+        return ok(HttpResponse::Conflict().finish());
+    }
+
+    if close_utc < open_utc {
+        error!(
+            "Wrong Request. {close} is smaller than {open}",
+            close = close_utc,
+            open = open_utc
+        );
+        return ok(HttpResponse::BadRequest().finish());
+    }
+
+    let parsed_budget = data::Budget::new(-1, &budget_request.name, open_utc, close_utc, &target);
+
+    let result = db::generate_budget(pool.get().unwrap(), &parsed_budget);
+
+    match result {
+        Ok(v) => ok(HttpResponse::Created().json(v)),
+        Err(e) => {
+            error!("Create current budget failed with {error}.", error = e);
+            ok(HttpResponse::InternalServerError().finish())
+        }
+    }
+}

@@ -114,8 +114,8 @@ fn main() -> io::Result<()> {
                             .route(web::post().to_async(budget::create_budget)),
                     )
                     .service(
-                        web::resource("/entry")
-                            .route(web::post().to_async(budget::add_entry_to_budget)),
+                        web::resource("/generate")
+                            .route(web::post().to_async(budget::generate_budget))
                     )
                     .service(
                         web::scope("/{id}")
