@@ -99,6 +99,7 @@ pub fn check_if_budget_exists(
 
 pub fn add_budget_entry(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    budget_id: i32,
     entry: NewBudgetEntry,
 ) -> Result<()> {
     let con = conn.deref_mut();
@@ -106,7 +107,7 @@ pub fn add_budget_entry(
 
     tx.execute(
         "INSERT INTO BudgetEntries (account, budget, balance) VALUES (?1, ?2, ?3)",
-        params![entry.account, entry.budget, entry.balance],
+        params![entry.account, budget_id, entry.balance],
     )?;
 
     tx.commit()

@@ -51,6 +51,5 @@ pub struct BudgetEntry {
 #[derive(Debug, Deserialize)]
 pub struct NewBudgetEntry {
     pub account: i32,
-    pub budget: i32,
     pub balance: i32,
 }

@@ -122,10 +122,11 @@ pub fn get_current_budget(
 
 pub fn add_entry_to_budget(
     pool: web::Data<Pool<SqliteConnectionManager>>,
+    params: web::Path<datastruct::IdRequest>,
     entry: web::Json<data::NewBudgetEntry>,
 ) -> impl Future<Item = HttpResponse, Error = Error> {
     let parsed_entry = entry.into_inner();
-    let result = db::add_budget_entry(pool.get().unwrap(), parsed_entry);
+    let result = db::add_budget_entry(pool.get().unwrap(), params.id, parsed_entry);
     match result {
         Ok(v) => ok(HttpResponse::Ok().json(v)),
         Err(_e) => ok(HttpResponse::InternalServerError().finish()),
