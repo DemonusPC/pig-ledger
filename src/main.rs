@@ -118,11 +118,16 @@ fn main() -> io::Result<()> {
                             .route(web::post().to_async(budget::add_entry_to_budget)),
                     )
                     .service(
-                        web::scope("/{id}").service(
-                            web::resource("")
-                                .route(web::get().to_async(budget::get_budget))
-                                .route(web::delete().to_async(budget::delete_budget)),
-                        ),
+                        web::scope("/{id}")
+                            .service(
+                                web::resource("")
+                                    .route(web::get().to_async(budget::get_budget))
+                                    .route(web::delete().to_async(budget::delete_budget)),
+                            )
+                            .service(
+                                web::resource("/entry")
+                                    .route(web::post().to_async(budget::add_entry_to_budget)),
+                            ),
                     ),
             )
     };
