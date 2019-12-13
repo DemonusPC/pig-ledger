@@ -113,6 +113,22 @@ pub fn add_budget_entry(
     tx.commit()
 }
 
+pub fn update_budget_entry(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    budget_id: i32,
+    entry: NewBudgetEntry,
+) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+
+    tx.execute(
+        "UPDATE BudgetEntries SET balance = ?1 WHERE account = ?2 AND budget = ?3",
+        params![entry.balance, entry.account, budget_id],
+    )?;
+
+    tx.commit()
+}
+
 pub fn list_budget_entries(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     budget: i32,

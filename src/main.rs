@@ -126,7 +126,8 @@ fn main() -> io::Result<()> {
                             )
                             .service(
                                 web::resource("/entry")
-                                    .route(web::post().to_async(budget::add_entry_to_budget)),
+                                    .route(web::post().to_async(budget::add_entry_to_budget))
+                                    .route(web::put().to_async(budget::update_entry_in_budget)),
                             ),
                     ),
             )
