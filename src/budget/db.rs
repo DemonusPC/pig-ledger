@@ -7,7 +7,7 @@ use std::ops::DerefMut;
 pub fn get_budget(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
-) -> Result<(Budget)> {
+) -> Result<Budget> {
     let mut stmt = conn.prepare("SELECT id, name, open, close FROM Budgets WHERE id = ?1")?;
 
     stmt.query_row(params![id], |row| {
@@ -35,7 +35,7 @@ pub fn remove_budget(
 pub fn create_budget(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     budget: &Budget,
-) -> Result<(i64)> {
+) -> Result<i64> {
     let con = conn.deref_mut();
     let tx = con.transaction()?;
 
@@ -58,7 +58,7 @@ pub fn get_budget_by_date(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     start: chrono::DateTime<Utc>,
     end: chrono::DateTime<Utc>,
-) -> Result<(Budget)> {
+) -> Result<Budget> {
     let mut stmt = conn.prepare("SELECT * from Budgets WHERE open >= ?1 AND close < ?2;")?;
 
     stmt.query_row(params![start, end], |row| {
@@ -75,7 +75,7 @@ pub fn check_if_budget_exists(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     start: chrono::DateTime<Utc>,
     end: chrono::DateTime<Utc>,
-) -> Result<(bool)> {
+) -> Result<bool> {
     let mut stmt =
         conn.prepare("SELECT EXISTS(SELECT * from Budgets WHERE open >= ?1 AND close < ?2);")?;
 
@@ -145,7 +145,7 @@ pub fn delete_budget_entry(
 pub fn list_budget_entries(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     budget: i32,
-) -> Result<(Vec<BudgetEntry>)> {
+) -> Result<Vec<BudgetEntry>> {
     let mut stmt =
         conn.prepare("SELECT id, account, budget, balance FROM BudgetEntries WHERE budget = ?1;")?;
 
@@ -170,7 +170,7 @@ pub fn list_budget_entries(
 pub fn generate_budget(
     mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     budget: &Budget,
-) -> Result<(i64)> {
+) -> Result<i64> {
     let con = conn.deref_mut();
     let tx = con.transaction()?;
 

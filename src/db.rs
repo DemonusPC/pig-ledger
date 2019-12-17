@@ -7,7 +7,7 @@ use rusqlite::{params, Connection, Result, NO_PARAMS};
 use chrono::{DateTime, Utc};
 use std::ops::DerefMut;
 
-pub fn list_transactions() -> Result<(Vec<Transaction>)> {
+pub fn list_transactions() -> Result<Vec<Transaction>> {
     let conn = Connection::open("ledger.db")?;
     let mut stmt = conn.prepare("SELECT id, date, name from Transactions ORDER BY date DESC")?;
 
@@ -32,7 +32,7 @@ pub fn list_transactions_date(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     month: u8,
     year: i32,
-) -> Result<(Vec<Transaction>)> {
+) -> Result<Vec<Transaction>> {
     let mut stmt = conn.prepare(
         "SELECT id, date, name from Transactions
         WHERE CAST(strftime('%m', date) as integer) = ?1 
@@ -60,7 +60,7 @@ pub fn list_transactions_date(
 pub fn get_account(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
-) -> Result<(Account)> {
+) -> Result<Account> {
     let mut stmt = conn.prepare("SELECT id, type, name, currency FROM Accounts WHERE id = ?1")?;
 
     stmt.query_row(params![id], |row| {
@@ -76,7 +76,7 @@ pub fn get_account(
 pub fn get_transaction(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
-) -> Result<(Transaction)> {
+) -> Result<Transaction> {
     let mut stmt = conn.prepare("SELECT id, date, name from Transactions WHERE id = ?1")?;
 
     stmt.query_row(params![id], |row| {
@@ -162,7 +162,7 @@ pub fn check_integrity(
 pub fn current_balance(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     account: i32,
-) -> Result<(SqlResult)> {
+) -> Result<SqlResult> {
     let mut stmt = conn.prepare("SELECT (SELECT ifnull(SUM(balance),0) as \"Debits\" FROM Debits WHERE account = ?1) - (SELECT ifnull(SUM(balance),0) as \"Credits\" FROM Credits WHERE account = ?1)")?;
 
     stmt.query_row(params![account], |row| {
@@ -175,7 +175,7 @@ pub fn current_balance(
 pub fn get_entries(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
-) -> Result<(Vec<Entry>)> {
+) -> Result<Vec<Entry>> {
     let mut stmt = conn.prepare(
         "SELECT id, account, transaction_id, balance, 0 as entry_type FROM Credits WHERE transaction_id = ?1
         UNION ALL
@@ -205,7 +205,7 @@ pub fn get_entries(
 
 pub fn list_currencies(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-) -> Result<(Vec<Currency>)> {
+) -> Result<Vec<Currency>> {
     let mut stmt = conn.prepare("SELECT code, numeric_code, minor_unit, name FROM Currency")?;
 
     let result = stmt
