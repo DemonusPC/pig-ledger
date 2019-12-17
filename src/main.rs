@@ -17,6 +17,7 @@ extern crate rusqlite;
 
 mod account;
 mod api;
+mod budget;
 mod datastruct;
 mod db;
 
@@ -34,7 +35,8 @@ use r2d2_sqlite::SqliteConnectionManager;
 use env_logger;
 
 fn main() -> io::Result<()> {
-    std::env::set_var("RUST_LOG", "actix_web=info");
+    // std::env::set_var("RUST_LOG", "actix_web=info");
+    std::env::set_var("RUST_LOG", "info");
     env_logger::init();
 
     let manager = SqliteConnectionManager::file("ledger.db");
@@ -102,6 +104,32 @@ fn main() -> io::Result<()> {
                     .service(
                         web::resource("/expense")
                             .route(web::get().to_async(account::list_expense_accounts)),
+                    ),
+            )
+            .service(
+                web::scope("/budget")
+                    .service(
+                        web::resource("")
+                            .route(web::get().to_async(budget::get_current_budget))
+                            .route(web::post().to_async(budget::create_budget)),
+                    )
+                    .service(
+                        web::resource("/generate")
+                            .route(web::post().to_async(budget::generate_budget)),
+                    )
+                    .service(
+                        web::scope("/{id}")
+                            .service(
+                                web::resource("")
+                                    .route(web::get().to_async(budget::get_budget))
+                                    .route(web::delete().to_async(budget::delete_budget)),
+                            )
+                            .service(
+                                web::resource("/entry")
+                                    .route(web::post().to_async(budget::add_entry_to_budget))
+                                    .route(web::put().to_async(budget::update_entry_in_budget))
+                                    .route(web::delete().to_async(budget::delete_entry_in_budget)),
+                            ),
                     ),
             )
     };

@@ -37,3 +37,20 @@ CREATE TABLE "Currency" (
 	"name"	TEXT NOT NULL UNIQUE,
 	PRIMARY KEY("code")
 )
+
+CREATE TABLE "Budgets" (
+	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	"name"	TEXT,
+	"open"	TEXT NOT NULL,
+	"close"	TEXT NOT NULL,
+)
+
+CREATE TABLE "BudgetEntries" (
+	"id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+	"account"	INTEGER,
+	"budget"	INTEGER,
+	"balance"	INTEGER,
+	FOREIGN KEY("budget") REFERENCES "Budgets"("id") ON DELETE CASCADE,
+	FOREIGN KEY("account") REFERENCES "Accounts"("id"),
+	UNIQUE("account", "budget")
+)
