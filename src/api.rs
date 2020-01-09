@@ -1,8 +1,4 @@
 use actix_web::{web, Error, HttpResponse};
-use futures::future::Future;
-
-use futures::future::ok;
-
 use serde_json::json;
 
 use r2d2::Pool;
@@ -12,22 +8,22 @@ use crate::account::data::Account;
 use crate::datastruct;
 use crate::db;
 
-pub fn list_transactions() -> impl Future<Item = HttpResponse, Error = Error> {
+pub async fn list_transactions() -> Result<HttpResponse, Error> {
     let result = db::list_transactions();
 
     match result {
-        Ok(v) => ok(HttpResponse::Ok().json(v)),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        Ok(v) => Ok(HttpResponse::Ok().json(v)),
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
-pub fn list_transactions_with_details(
+pub async fn list_transactions_with_details(
     pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let transactions = db::list_transactions();
 
     if transactions.is_err() {
-        return ok(HttpResponse::InternalServerError().finish());
+        return Ok(HttpResponse::InternalServerError().finish());
     }
 
     let mut vec: Vec<serde_json::value::Value> = Vec::new();
@@ -47,15 +43,15 @@ pub fn list_transactions_with_details(
     }
 
     let result = json!({ "transactions": vec });
-    ok(HttpResponse::Ok().json(result))
+    Ok(HttpResponse::Ok().json(result))
 }
 
-pub fn get_transactions_date_scoped(
+pub async fn get_transactions_date_scoped(
     params: web::Path<datastruct::DateRequest>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     if params.month < 1 || params.month > 12 || params.year < 1970 {
-        return ok(HttpResponse::BadRequest().finish());
+        return Ok(HttpResponse::BadRequest().finish());
     }
 
     let result = db::list_transactions_date(pool.get().unwrap(), params.month, params.year);
@@ -66,9 +62,9 @@ pub fn get_transactions_date_scoped(
                 "transactions": v,
             });
 
-            ok(HttpResponse::Ok().json(date_transactions))
+            Ok(HttpResponse::Ok().json(date_transactions))
         }
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
@@ -79,23 +75,23 @@ fn are_accounts_compatible(from: &Account, to: &Account) -> bool {
     return true;
 }
 
-pub fn create_transaction(
+pub async fn create_transaction(
     transaction: web::Json<datastruct::NewTransaction>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     // First we get the two accounts
     let from_acc_query = db::get_account(pool.get().unwrap(), transaction.from);
     let to_acc_query = db::get_account(pool.get().unwrap(), transaction.to);
 
     if from_acc_query.is_err() || to_acc_query.is_err() {
-        return ok(HttpResponse::BadRequest().finish());
+        return Ok(HttpResponse::BadRequest().finish());
     }
 
     let from_account = from_acc_query.unwrap();
     let to_account = to_acc_query.unwrap();
 
     if are_accounts_compatible(&from_account, &to_account) == false {
-        ok(HttpResponse::BadRequest().finish())
+        Ok(HttpResponse::BadRequest().finish())
     } else {
         let result = db::transaction(
             pool.get().unwrap(),
@@ -111,17 +107,17 @@ pub fn create_transaction(
                     "id": v,
                 });
 
-                ok(HttpResponse::Ok().json(result))
+                Ok(HttpResponse::Ok().json(result))
             }
-            Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+            Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
         }
     }
 }
 
-pub fn delete_transaction(
+pub async fn delete_transaction(
     params: web::Path<datastruct::IdRequest>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let result = db::remove_transaction(pool.get().unwrap(), params.id);
 
     match result {
@@ -130,33 +126,33 @@ pub fn delete_transaction(
                 "id": params.id,
             });
 
-            ok(HttpResponse::Ok().json(result))
+            Ok(HttpResponse::Ok().json(result))
         }
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
-pub fn get_transaction(
+pub async fn get_transaction(
     params: web::Path<datastruct::IdRequest>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let result = db::get_transaction(pool.get().unwrap(), params.id);
 
     match result {
-        Ok(v) => ok(HttpResponse::Ok().json(v)),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        Ok(v) => Ok(HttpResponse::Ok().json(v)),
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
-pub fn get_transaction_detail(
+pub async fn get_transaction_detail(
     params: web::Path<datastruct::IdRequest>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let transaction = db::get_transaction(pool.get().unwrap(), params.id);
     let entries = db::get_entries(pool.get().unwrap(), params.id);
 
     if transaction.is_err() || entries.is_err() {
-        return ok(HttpResponse::InternalServerError().finish());
+        return Ok(HttpResponse::InternalServerError().finish());
     }
 
     let result = json!({
@@ -164,36 +160,36 @@ pub fn get_transaction_detail(
         "entries": entries.unwrap(),
     });
 
-    ok(HttpResponse::Ok().json(result))
+    Ok(HttpResponse::Ok().json(result))
 }
 
-pub fn get_account_balance(
+pub async fn get_account_balance(
     params: web::Path<datastruct::IdRequest>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let result = db::current_balance(pool.get().unwrap(), params.id);
 
     match result {
-        Ok(v) => ok(HttpResponse::Ok().json(v)),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        Ok(v) => Ok(HttpResponse::Ok().json(v)),
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
-pub fn list_currencies(
+pub async fn list_currencies(
     pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let conn = pool.get().unwrap();
     let result = db::list_currencies(conn);
 
     match result {
-        Ok(v) => ok(HttpResponse::Ok().json(v)),
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        Ok(v) => Ok(HttpResponse::Ok().json(v)),
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
-pub fn check_ledger_integrity(
+pub async fn check_ledger_integrity(
     pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let conn = pool.get().unwrap();
     let result = db::check_integrity(conn);
 
@@ -202,9 +198,9 @@ pub fn check_ledger_integrity(
             let result = json!({
                 "integrity": v,
             });
-            ok(HttpResponse::Ok().json(result))
+            Ok(HttpResponse::Ok().json(result))
         }
-        Err(_e) => ok(HttpResponse::InternalServerError().finish()),
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 

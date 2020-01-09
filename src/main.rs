@@ -34,7 +34,8 @@ use r2d2_sqlite::SqliteConnectionManager;
 
 use env_logger;
 
-fn main() -> io::Result<()> {
+#[actix_rt::main]
+async fn main() -> io::Result<()> {
     // std::env::set_var("RUST_LOG", "actix_web=info");
     std::env::set_var("RUST_LOG", "info");
     env_logger::init();
@@ -47,93 +48,87 @@ fn main() -> io::Result<()> {
 
         App::new()
             .wrap(Logger::default())
-            .wrap(Cors::new().send_wildcard().max_age(3600))
+            .wrap(Cors::new().allowed_origin("*").max_age(3600).finish())
             .data(pool.clone())
-            .service(web::resource("/").route(web::get().to_async(account::list_accounts)))
-            .service(web::resource("/currencies").route(web::get().to_async(api::list_currencies)))
-            .service(
-                web::resource("/integrity").route(web::get().to_async(api::check_ledger_integrity)),
-            )
+            .service(web::resource("/").route(web::get().to(account::list_accounts)))
+            .service(web::resource("/currencies").route(web::get().to(api::list_currencies)))
+            .service(web::resource("/integrity").route(web::get().to(api::check_ledger_integrity)))
             .service(
                 web::scope("/transactions")
-                    .service(web::resource("").route(web::get().to_async(api::list_transactions)))
+                    .service(web::resource("").route(web::get().to(api::list_transactions)))
                     .service(
                         web::resource("/detail")
-                            .route(web::get().to_async(api::list_transactions_with_details)),
+                            .route(web::get().to(api::list_transactions_with_details)),
                     )
                     .service(
                         web::resource("/{year}/{month}")
-                            .route(web::get().to_async(api::get_transactions_date_scoped)),
+                            .route(web::get().to(api::get_transactions_date_scoped)),
                     ),
             )
             .service(
                 web::scope("/transaction")
-                    .service(web::resource("").route(web::post().to_async(api::create_transaction)))
+                    .service(web::resource("").route(web::post().to(api::create_transaction)))
                     .service(
                         web::resource("/{id}")
-                            .route(web::get().to_async(api::get_transaction))
-                            .route(web::delete().to_async(api::delete_transaction)),
+                            .route(web::get().to(api::get_transaction))
+                            .route(web::delete().to(api::delete_transaction)),
                     )
                     .service(
                         web::resource("/{id}/detail")
-                            .route(web::get().to_async(api::get_transaction_detail)),
+                            .route(web::get().to(api::get_transaction_detail)),
                     ),
             )
             .service(
                 web::scope("/account")
-                    .service(
-                        web::resource("/").route(web::post().to_async(account::create_account)),
-                    )
+                    .service(web::resource("/").route(web::post().to(account::create_account)))
                     .service(
                         web::resource("/{id}")
-                            .route(web::get().to_async(account::get_account))
-                            .route(web::delete().to_async(account::delete_account)),
+                            .route(web::get().to(account::get_account))
+                            .route(web::delete().to(account::delete_account)),
                     )
                     .service(
                         web::resource("/{id}/balance")
-                            .route(web::get().to_async(api::get_account_balance)),
+                            .route(web::get().to(api::get_account_balance)),
                     ),
             )
             .service(
                 web::scope("/accounts")
-                    .service(web::resource("").route(web::get().to_async(account::list_accounts)))
+                    .service(web::resource("").route(web::get().to(account::list_accounts)))
                     .service(
-                        web::resource("/asset")
-                            .route(web::get().to_async(account::list_asset_accounts)),
+                        web::resource("/asset").route(web::get().to(account::list_asset_accounts)),
                     )
                     .service(
                         web::resource("/expense")
-                            .route(web::get().to_async(account::list_expense_accounts)),
+                            .route(web::get().to(account::list_expense_accounts)),
                     ),
             )
             .service(
                 web::scope("/budget")
                     .service(
                         web::resource("")
-                            .route(web::get().to_async(budget::get_current_budget))
-                            .route(web::post().to_async(budget::create_budget)),
+                            .route(web::get().to(budget::get_current_budget))
+                            .route(web::post().to(budget::create_budget)),
                     )
                     .service(
-                        web::resource("/generate")
-                            .route(web::post().to_async(budget::generate_budget)),
+                        web::resource("/generate").route(web::post().to(budget::generate_budget)),
                     )
                     .service(
                         web::scope("/{id}")
                             .service(
                                 web::resource("")
-                                    .route(web::get().to_async(budget::get_budget))
-                                    .route(web::delete().to_async(budget::delete_budget)),
+                                    .route(web::get().to(budget::get_budget))
+                                    .route(web::delete().to(budget::delete_budget)),
                             )
                             .service(
                                 web::resource("/entry")
-                                    .route(web::post().to_async(budget::add_entry_to_budget))
-                                    .route(web::put().to_async(budget::update_entry_in_budget))
-                                    .route(web::delete().to_async(budget::delete_entry_in_budget)),
+                                    .route(web::post().to(budget::add_entry_to_budget))
+                                    .route(web::put().to(budget::update_entry_in_budget))
+                                    .route(web::delete().to(budget::delete_entry_in_budget)),
                             ),
                     ),
             )
     };
 
     debug!("Starting server");
-    HttpServer::new(app).bind("localhost:8088")?.run()
+    HttpServer::new(app).bind("localhost:8088")?.run().await
 }
