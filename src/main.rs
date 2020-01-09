@@ -20,6 +20,7 @@ mod api;
 mod budget;
 mod datastruct;
 mod db;
+mod transaction;
 
 #[macro_use]
 extern crate log;
@@ -55,14 +56,14 @@ async fn main() -> io::Result<()> {
             .service(web::resource("/integrity").route(web::get().to(api::check_ledger_integrity)))
             .service(
                 web::scope("/transactions")
-                    .service(web::resource("").route(web::get().to(api::list_transactions)))
+                    .service(web::resource("").route(web::get().to(transaction::list_transactions)))
                     .service(
                         web::resource("/detail")
-                            .route(web::get().to(api::list_transactions_with_details)),
+                            .route(web::get().to(transaction::list_transactions_with_details)),
                     )
                     .service(
                         web::resource("/{year}/{month}")
-                            .route(web::get().to(api::get_transactions_date_scoped)),
+                            .route(web::get().to(transaction::list_transactions_date_scoped)),
                     ),
             )
             .service(
