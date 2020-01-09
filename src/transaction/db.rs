@@ -33,9 +33,10 @@ pub fn get_entries_for_transaction(
     id: i32,
 ) -> Result<Vec<Entry>> {
     let mut stmt = conn.prepare(
-        "SELECT id, account, transaction_id, balance, 0 as entry_type FROM Credits WHERE transaction_id = ?1
+        "
+        SELECT c.id, c.account, a.name, c.transaction_id, c.balance, 0 as entry_type FROM Credits as c INNER JOIN Accounts as a ON c.account = a.id WHERE c.transaction_id = ?1
         UNION ALL
-        SELECT id, account, transaction_id, balance, 1 as entry_type FROM Debits WHERE transaction_id = ?1;",
+        SELECT d.id, d.account, a.name, d.transaction_id, d.balance, 1 as entry_type FROM Debits as d INNER JOIN Accounts as a ON d.account = a.id WHERE d.transaction_id = ?1",
     )?;
 
     let result = stmt
@@ -43,9 +44,10 @@ pub fn get_entries_for_transaction(
             Ok(Entry {
                 id: row.get(0).unwrap(),
                 account: row.get(1).unwrap(),
-                transaction_id: row.get(2).unwrap(),
-                balance: row.get(3).unwrap(),
-                entry_type: EntryType::from_i32(row.get(4).unwrap()),
+                account_name: row.get(2).unwrap(),
+                transaction_id: row.get(3).unwrap(),
+                balance: row.get(4).unwrap(),
+                entry_type: EntryType::from_i32(row.get(5).unwrap()),
             })
         })
         .and_then(|mapped_rows| Ok(mapped_rows.map(|row| row.unwrap()).collect::<Vec<Entry>>()))?;

@@ -28,6 +28,7 @@ impl EntryType {
 pub struct Entry {
     pub id: i32,
     pub account: i32,
+    pub account_name: String,
     pub transaction_id: i32,
     pub balance: i32,
     pub entry_type: EntryType,
