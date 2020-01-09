@@ -48,7 +48,7 @@ async fn main() -> io::Result<()> {
 
         App::new()
             .wrap(Logger::default())
-            .wrap(Cors::new().allowed_origin("*").max_age(3600).finish())
+            .wrap(Cors::new().max_age(3600).finish())
             .data(pool.clone())
             .service(web::resource("/").route(web::get().to(account::list_accounts)))
             .service(web::resource("/currencies").route(web::get().to(api::list_currencies)))
