@@ -64,6 +64,10 @@ async fn main() -> io::Result<()> {
                     .service(
                         web::resource("/{year}/{month}")
                             .route(web::get().to(transaction::list_transactions_date_scoped)),
+                    )
+                    .service(
+                        web::resource("/{year}/{month}/detail")
+                            .route(web::get().to(transaction::list_transactions_date_scoped_with_details)),
                     ),
             )
             .service(

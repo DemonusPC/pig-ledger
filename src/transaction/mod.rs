@@ -72,6 +72,41 @@ pub async fn list_transactions_date_scoped(
     }
 }
 
+pub async fn list_transactions_date_scoped_with_details(
+    params: web::Path<datastruct::DateRequest>,
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> Result<HttpResponse, Error> {
+    if params.month < 1 || params.month > 12 || params.year < 1970 {
+        return Ok(HttpResponse::BadRequest().finish());
+    }
+
+    let transactions = db::list_transactions_date(pool.get().unwrap(), params.month, params.year);
+
+    if transactions.is_err() {
+        error!("List transactions with details date scoped failed with err: {:?}", transactions.err());
+        return Ok(HttpResponse::InternalServerError().finish());
+    }
+    
+    let mut vec: Vec<serde_json::value::Value> = Vec::new();
+
+    for t in transactions.unwrap() {
+        let entries = db::get_entries_for_transaction(pool.get().unwrap(), t.id);
+        match entries {
+            Ok(v) => {
+                let result = json!({
+                    "transaction": t,
+                    "entries": v
+                });
+                vec.push(result);
+            }
+            Err(_e) => continue,
+        }
+    }
+    
+    let result = json!({ "transactions": vec });
+    Ok(HttpResponse::Ok().json(result))
+}
+
 pub async fn get_transaction(
     params: web::Path<datastruct::IdRequest>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
