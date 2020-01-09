@@ -3,7 +3,7 @@ use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
 pub mod data;
-mod db;
+pub mod db;
 
 use crate::datastruct;
 

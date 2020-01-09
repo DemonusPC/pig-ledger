@@ -32,3 +32,11 @@ pub struct Entry {
     pub balance: i32,
     pub entry_type: EntryType,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NewTransaction {
+    pub name: String,
+    pub balance: i32,
+    pub from: i32,
+    pub to: i32,
+}

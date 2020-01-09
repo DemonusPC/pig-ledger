@@ -68,15 +68,17 @@ async fn main() -> io::Result<()> {
             )
             .service(
                 web::scope("/transaction")
-                    .service(web::resource("").route(web::post().to(api::create_transaction)))
+                    .service(
+                        web::resource("").route(web::post().to(transaction::create_transaction)),
+                    )
                     .service(
                         web::resource("/{id}")
-                            .route(web::get().to(api::get_transaction))
-                            .route(web::delete().to(api::delete_transaction)),
+                            .route(web::get().to(transaction::get_transaction))
+                            .route(web::delete().to(transaction::delete_transaction)),
                     )
                     .service(
                         web::resource("/{id}/detail")
-                            .route(web::get().to(api::get_transaction_detail)),
+                            .route(web::get().to(transaction::get_transaction_detail)),
                     ),
             )
             .service(

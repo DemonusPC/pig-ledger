@@ -1,6 +1,11 @@
 use crate::transaction::data::{Entry, EntryType, Transaction};
 use rusqlite::{params, Result, NO_PARAMS};
 
+use chrono::{DateTime, Utc};
+use std::ops::DerefMut;
+
+// List database functions
+
 pub fn list_transactions(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
 ) -> Result<Vec<Transaction>> {
@@ -79,4 +84,157 @@ pub fn list_transactions_date(
         })?;
 
     Ok(transactions)
+}
+
+// Single transactions functions
+
+pub fn get_transaction(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    id: i32,
+) -> Result<Transaction> {
+    let mut stmt = conn.prepare("SELECT id, date, name from Transactions WHERE id = ?1")?;
+
+    stmt.query_row(params![id], |row| {
+        Ok(Transaction {
+            id: row.get(0).unwrap(),
+            date: row.get(1).unwrap(),
+            name: row.get(2).unwrap(),
+        })
+    })
+}
+
+pub fn create_transaction(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    debit_account: i32,
+    credit_account: i32,
+    balance: i32,
+    name: &str,
+) -> Result<i64> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+    let date: DateTime<Utc> = Utc::now();
+
+    tx.execute(
+        "INSERT INTO Transactions (date, name) VALUES (?1, ?2)",
+        params![date, name],
+    )?;
+
+    let transaction_id = tx.last_insert_rowid();
+
+    tx.execute(
+        "INSERT INTO Debits (account, transaction_id, balance) VALUES (?1, ?2, ?3)",
+        params![debit_account, transaction_id, balance],
+    )?;
+    tx.execute(
+        "INSERT INTO Credits (account, transaction_id, balance) VALUES (?1, ?2, ?3)",
+        params![credit_account, transaction_id, balance],
+    )?;
+
+    let transaction_result = tx.commit();
+
+    match transaction_result {
+        Ok(_) => Ok(transaction_id),
+        Err(_) => panic!("Transaction has failed"),
+    }
+}
+
+pub fn remove_transaction(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    id: i32,
+) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+
+    tx.execute("DELETE FROM Transactions WHERE id = ?1", params![id])?;
+
+    tx.commit()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use r2d2_sqlite::SqliteConnectionManager;
+    use rusqlite::params;
+
+    fn create_base(conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>) {
+        let _ = conn.execute(
+            "CREATE TABLE \"Currency\" (
+            \"code\"	TEXT NOT NULL UNIQUE,
+            \"numeric_code\"	INTEGER NOT NULL UNIQUE,
+            \"minor_unit\"	INTEGER NOT NULL DEFAULT 2,
+            \"name\"	TEXT NOT NULL UNIQUE,
+            PRIMARY KEY(\"code\")
+            )",
+            params![],
+        );
+        let _num = conn.execute(
+            "INSERT INTO Currency (code, numeric_code, minor_unit, name) VALUES ('GBP', '826', '2', 'Pound Sterling');",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Accounts\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"type\"	INTEGER NOT NULL,
+	        \"name\"	TEXT NOT NULL,
+	        \"currency\"	TEXT NOT NULL,
+	        FOREIGN KEY(\"currency\") REFERENCES \"Currency\"(\"code\")
+            )",
+            params![],
+        );
+
+        let _num = conn.execute(
+            "INSERT INTO Accounts (type, name, currency) VALUES (0, \"Current\", \"GBP\")",
+            params![],
+        );
+
+        let _num = conn.execute(
+            "INSERT INTO Accounts (type, name, currency) VALUES (1, \"Expenses\", \"GBP\")",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Transactions\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"date\"	TEXT NOT NULL,
+	        \"name\"	TEXT
+            )",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Credits\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"account\"	INTEGER NOT NULL,
+	        \"transaction_id\"	INTEGER NOT NULL,
+	        \"balance\"	INTEGER NOT NULL DEFAULT 0 CHECK (typeof(\"balance\") = 'integer'),
+	        FOREIGN KEY(\"account\") REFERENCES \"Accounts\"(\"id\"),
+	        FOREIGN KEY(\"transaction_id\") REFERENCES \"Transactions\"(\"id\") ON DELETE CASCADE
+            )",
+            params![],
+        );
+
+        let _ = conn.execute(
+            "CREATE TABLE \"Debits\" (
+	        \"id\"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	        \"account\"	INTEGER NOT NULL,
+	        \"transaction_id\"	INTEGER NOT NULL,
+	        \"balance\"	INTEGER NOT NULL DEFAULT 0 CHECK (typeof(\"balance\") = 'integer'),
+	        FOREIGN KEY(\"account\") REFERENCES \"Accounts\"(\"id\"),
+	        FOREIGN KEY(\"transaction_id\") REFERENCES \"Transactions\"(\"id\") ON DELETE CASCADE
+            )",
+            params![],
+        );
+    }
+
+    #[test]
+    fn create_transaction_test() {
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::new(manager).unwrap();
+        create_base(pool.get().unwrap());
+
+        let id = create_transaction(pool.get().unwrap(), 1, 2, 50, "Super Payment");
+
+        assert_eq!(id.unwrap(), 1);
+    }
 }
