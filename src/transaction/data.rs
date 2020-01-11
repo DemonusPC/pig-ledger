@@ -2,6 +2,7 @@ use chrono::Utc;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub id: i32,
     pub date: chrono::DateTime<Utc>,
@@ -9,6 +10,7 @@ pub struct Transaction {
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Copy, Clone)]
+#[serde(rename_all = "camelCase")]
 pub enum EntryType {
     Debit,
     Credit,
@@ -25,6 +27,7 @@ impl EntryType {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Entry {
     pub id: i32,
     pub account: i32,
