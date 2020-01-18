@@ -20,6 +20,7 @@ mod api;
 mod budget;
 mod datastruct;
 mod db;
+mod transaction;
 
 #[macro_use]
 extern crate log;
@@ -55,27 +56,33 @@ async fn main() -> io::Result<()> {
             .service(web::resource("/integrity").route(web::get().to(api::check_ledger_integrity)))
             .service(
                 web::scope("/transactions")
-                    .service(web::resource("").route(web::get().to(api::list_transactions)))
+                    .service(web::resource("").route(web::get().to(transaction::list_transactions)))
                     .service(
                         web::resource("/detail")
-                            .route(web::get().to(api::list_transactions_with_details)),
+                            .route(web::get().to(transaction::list_transactions_with_details)),
                     )
                     .service(
                         web::resource("/{year}/{month}")
-                            .route(web::get().to(api::get_transactions_date_scoped)),
+                            .route(web::get().to(transaction::list_transactions_date_scoped)),
+                    )
+                    .service(
+                        web::resource("/{year}/{month}/detail")
+                            .route(web::get().to(transaction::list_transactions_date_scoped_with_details)),
                     ),
             )
             .service(
                 web::scope("/transaction")
-                    .service(web::resource("").route(web::post().to(api::create_transaction)))
+                    .service(
+                        web::resource("").route(web::post().to(transaction::create_transaction)),
+                    )
                     .service(
                         web::resource("/{id}")
-                            .route(web::get().to(api::get_transaction))
-                            .route(web::delete().to(api::delete_transaction)),
+                            .route(web::get().to(transaction::get_transaction))
+                            .route(web::delete().to(transaction::delete_transaction)),
                     )
                     .service(
                         web::resource("/{id}/detail")
-                            .route(web::get().to(api::get_transaction_detail)),
+                            .route(web::get().to(transaction::get_transaction_detail)),
                     ),
             )
             .service(
