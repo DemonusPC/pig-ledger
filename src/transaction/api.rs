@@ -6,6 +6,8 @@ use serde_json::json;
 use crate::datastruct;
 
 use crate::transaction::db;
+use crate::transaction::data;
+use crate::account;
 
 // Get a single transaction
 pub async fn get_transaction_v2(
@@ -26,6 +28,46 @@ pub async fn get_transaction_v2(
 }
 
 // Create a new transaction
+pub async fn create_transaction_v2(
+    transaction: web::Json<data::NewTransaction>,
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> Result<HttpResponse, Error> {
+    // First we get the two accounts
+    let from_acc_query = account::db::get_account(pool.get().unwrap(), transaction.from);
+    let to_acc_query = account::db::get_account(pool.get().unwrap(), transaction.to);
+
+    if from_acc_query.is_err() || to_acc_query.is_err() {
+        return Ok(HttpResponse::BadRequest().finish());
+    }
+
+    let from_account = from_acc_query.unwrap();
+    let to_account = to_acc_query.unwrap();
+
+    if !from_account.currency_compatible(&to_account) {
+        return Ok(HttpResponse::BadRequest().finish())
+    }
+
+    let result = db::create_transaction(
+        pool.get().unwrap(),
+        to_account.id,
+        from_account.id,
+        transaction.balance,
+        &transaction.name,
+    );
+
+    match result {
+        Ok(v) => {
+            let result = json!({
+                "status": "CREATED",
+                "id": v,
+            });
+
+            Ok(HttpResponse::Ok().json(result))
+        }
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
+    }
+    
+}
 
 // Delete a single transaction
 pub async fn delete_transaction(

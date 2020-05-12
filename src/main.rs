@@ -89,7 +89,7 @@ async fn main() -> io::Result<()> {
                     .service(
                         web::resource("")
                             .route(web::get().to(transaction::list_transactions))
-                            .route(web::post().to(transaction::create_transaction)),
+                            .route(web::post().to(transaction::create_transaction_v2)),
                     )
                     .service(
                         web::resource("/{id}")

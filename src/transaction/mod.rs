@@ -14,6 +14,7 @@ mod api;
 pub use self::api::get_transaction_v2;
 pub use self::api::delete_transaction;
 pub use self::api::list_transactions;
+pub use self::api::create_transaction_v2;
 
 pub async fn list_transactions_with_details(
     pool: web::Data<Pool<SqliteConnectionManager>>,
