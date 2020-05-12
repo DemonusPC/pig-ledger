@@ -50,10 +50,6 @@ pub fn get_transaction_v2(
 }
 
 
-
-
-
-
 // List database functions
 
 pub fn list_transactions(

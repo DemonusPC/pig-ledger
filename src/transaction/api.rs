@@ -10,6 +10,7 @@ use crate::datastruct;
 
 use crate::transaction::db;
 
+// Get a single transaction
 pub async fn get_transaction_v2(
     params: web::Path<datastruct::IdRequest>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
@@ -23,6 +24,9 @@ pub async fn get_transaction_v2(
     Ok(HttpResponse::Ok().json(transaction.unwrap()))
 }
 
+// Create a new transaction
+
+// Delete a single transaction
 pub async fn delete_transaction(
     params: web::Path<datastruct::IdRequest>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
@@ -41,3 +45,18 @@ pub async fn delete_transaction(
         Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
+
+// List operations
+// Get all transactions limited to 32
+
+pub async fn list_transactions(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> Result<HttpResponse, Error> {
+    let result = db::list_transactions(pool.get().unwrap());
+
+    match result {
+        Ok(v) => Ok(HttpResponse::Ok().json(v)),
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
+    }
+}
+
