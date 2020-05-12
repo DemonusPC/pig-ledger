@@ -65,10 +65,9 @@ async fn main() -> io::Result<()> {
                         web::resource("/{year}/{month}")
                             .route(web::get().to(transaction::list_transactions_date_scoped)),
                     )
-                    .service(
-                        web::resource("/{year}/{month}/detail")
-                            .route(web::get().to(transaction::list_transactions_date_scoped_with_details)),
-                    ),
+                    .service(web::resource("/{year}/{month}/detail").route(
+                        web::get().to(transaction::list_transactions_date_scoped_with_details),
+                    )),
             )
             .service(
                 web::scope("/transaction")
@@ -83,6 +82,19 @@ async fn main() -> io::Result<()> {
                     .service(
                         web::resource("/{id}/detail")
                             .route(web::get().to(transaction::get_transaction_detail)),
+                    ),
+            )
+            .service(
+                web::scope("/v2/transactions")
+                    .service(
+                        web::resource("")
+                            .route(web::get().to(transaction::list_transactions))
+                            .route(web::post().to(transaction::create_transaction)),
+                    )
+                    .service(
+                        web::resource("/{id}")
+                            .route(web::get().to(transaction::get_transaction_v2))
+                            .route(web::delete().to(transaction::delete_transaction)),
                     ),
             )
             .service(

@@ -9,6 +9,9 @@ use crate::datastruct;
 
 pub mod data;
 mod db;
+mod api;
+
+pub use self::api::get_transaction_v2;
 
 pub async fn list_transactions(
     pool: web::Data<Pool<SqliteConnectionManager>>,
@@ -83,10 +86,13 @@ pub async fn list_transactions_date_scoped_with_details(
     let transactions = db::list_transactions_date(pool.get().unwrap(), params.month, params.year);
 
     if transactions.is_err() {
-        error!("List transactions with details date scoped failed with err: {:?}", transactions.err());
+        error!(
+            "List transactions with details date scoped failed with err: {:?}",
+            transactions.err()
+        );
         return Ok(HttpResponse::InternalServerError().finish());
     }
-    
+
     let mut vec: Vec<serde_json::value::Value> = Vec::new();
 
     for t in transactions.unwrap() {
@@ -102,7 +108,7 @@ pub async fn list_transactions_date_scoped_with_details(
             Err(_e) => continue,
         }
     }
-    
+
     let result = json!({ "transactions": vec });
     Ok(HttpResponse::Ok().json(result))
 }

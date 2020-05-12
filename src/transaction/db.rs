@@ -1,8 +1,58 @@
-use crate::transaction::data::{Entry, EntryType, Transaction};
+use crate::transaction::data::{Entry, EntryType, Transaction, TransactionV2, EntryV2};
 use rusqlite::{params, Result, NO_PARAMS};
 
 use chrono::{DateTime, Utc};
 use std::ops::DerefMut;
+
+
+// V2
+pub fn get_transaction_v2(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    id: i32,
+) -> Result<TransactionV2> {
+    let mut stmt = conn.prepare("SELECT id, date, name from Transactions WHERE id = ?1")?;
+
+    let metadata = stmt.query_row(params![id], |row| {
+        Ok((
+            row.get(0)?,
+            row.get(1)?,
+            row.get(2)?)
+        )
+    })?;
+
+    let mut entry_stmt = conn.prepare(
+        "
+        SELECT c.id, c.account, a.name, c.transaction_id, c.balance, 0 as entry_type FROM Credits as c INNER JOIN Accounts as a ON c.account = a.id WHERE c.transaction_id = ?1
+        UNION ALL
+        SELECT d.id, d.account, a.name, d.transaction_id, d.balance, 1 as entry_type FROM Debits as d INNER JOIN Accounts as a ON d.account = a.id WHERE d.transaction_id = ?1",
+    )?;
+
+    let entries = entry_stmt
+        .query_map(params![id], |row| {
+            Ok(EntryV2::new(
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+                EntryType::from_i32(row.get(5)?),
+            ))
+        })
+        .and_then(|mapped_rows| Ok(mapped_rows.map(|row| row.unwrap()).collect::<Vec<EntryV2>>()))?;
+
+    if entries.len() % 2 != 0 {
+        panic!("Uneven number of entries. Integrity damaged");
+    }
+
+
+   Ok(TransactionV2::new(metadata.0, metadata.1, metadata.2, entries))
+
+}
+
+
+
+
+
 
 // List database functions
 
