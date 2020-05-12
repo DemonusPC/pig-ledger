@@ -12,6 +12,7 @@ mod db;
 mod api;
 
 pub use self::api::get_transaction_v2;
+pub use self::api::delete_transaction;
 
 pub async fn list_transactions(
     pool: web::Data<Pool<SqliteConnectionManager>>,
@@ -187,24 +188,6 @@ pub async fn create_transaction(
             }
             Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
         }
-    }
-}
-
-pub async fn delete_transaction(
-    params: web::Path<datastruct::IdRequest>,
-    pool: web::Data<Pool<SqliteConnectionManager>>,
-) -> Result<HttpResponse, Error> {
-    let result = db::remove_transaction(pool.get().unwrap(), params.id);
-
-    match result {
-        Ok(_v) => {
-            let result = json!({
-                "id": params.id,
-            });
-
-            Ok(HttpResponse::Ok().json(result))
-        }
-        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
