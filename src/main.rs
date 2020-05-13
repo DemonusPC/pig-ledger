@@ -94,6 +94,7 @@ async fn main() -> io::Result<()> {
                     .service(
                         web::resource("/{id}")
                             .route(web::get().to(transaction::get_transaction_v2))
+                            .route(web::put().to(transaction::update_transaction_v2))
                             .route(web::delete().to(transaction::delete_transaction)),
                     ),
             )

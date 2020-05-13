@@ -45,6 +45,12 @@ pub struct NewTransaction {
     pub to: i32,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateTransaction {
+    pub name: String,
+    pub balance: i32,
+}
+
 #[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct EntryV2 {

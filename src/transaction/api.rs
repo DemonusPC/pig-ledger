@@ -1,13 +1,12 @@
-
+use crate::datastruct;
 use actix_web::{web, Error, HttpResponse};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use serde_json::json;
-use crate::datastruct;
 
-use crate::transaction::db;
-use crate::transaction::data;
 use crate::account;
+use crate::transaction::data;
+use crate::transaction::db;
 
 // Get a single transaction
 pub async fn get_transaction_v2(
@@ -18,12 +17,10 @@ pub async fn get_transaction_v2(
 
     match transaction {
         Ok(response) => Ok(HttpResponse::Ok().json(response)),
-        Err(err) => {
-            match err {
-                rusqlite::Error::QueryReturnedNoRows => Ok(HttpResponse::NotFound().finish()),
-                _ => Ok(HttpResponse::InternalServerError().finish())
-            }      
-        }
+        Err(err) => match err {
+            rusqlite::Error::QueryReturnedNoRows => Ok(HttpResponse::NotFound().finish()),
+            _ => Ok(HttpResponse::InternalServerError().finish()),
+        },
     }
 }
 
@@ -44,7 +41,7 @@ pub async fn create_transaction_v2(
     let to_account = to_acc_query.unwrap();
 
     if !from_account.currency_compatible(&to_account) {
-        return Ok(HttpResponse::BadRequest().finish())
+        return Ok(HttpResponse::BadRequest().finish());
     }
 
     let result = db::create_transaction(
@@ -66,7 +63,32 @@ pub async fn create_transaction_v2(
         }
         Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
-    
+}
+
+// Update Transaction name or balance
+pub async fn update_transaction_v2(
+    params: web::Path<datastruct::IdRequest>,
+    transaction: web::Json<data::UpdateTransaction>,
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> Result<HttpResponse, Error> {
+    let result = db::update_transaction(
+        pool.get().unwrap(),
+        params.id,
+        transaction.balance,
+        &transaction.name,
+    );
+
+    match result {
+        Ok(()) => {
+            let result = json!({
+                "status": "UPDATED",
+                "id": params.id,
+            });
+
+            Ok(HttpResponse::Ok().json(result))
+        }
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
+    }
 }
 
 // Delete a single transaction
@@ -102,4 +124,3 @@ pub async fn list_transactions(
         Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
-

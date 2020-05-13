@@ -1,9 +1,8 @@
-use crate::transaction::data::{Entry, EntryType, Transaction, TransactionV2, EntryV2};
+use crate::transaction::data::{Entry, EntryType, EntryV2, Transaction, TransactionV2};
 use rusqlite::{params, Result, NO_PARAMS};
 
 use chrono::{DateTime, Utc};
 use std::ops::DerefMut;
-
 
 // V2
 pub fn get_transaction_v2(
@@ -13,11 +12,7 @@ pub fn get_transaction_v2(
     let mut stmt = conn.prepare("SELECT id, date, name from Transactions WHERE id = ?1")?;
 
     let metadata = stmt.query_row(params![id], |row| {
-        Ok((
-            row.get(0)?,
-            row.get(1)?,
-            row.get(2)?)
-        )
+        Ok((row.get(0)?, row.get(1)?, row.get(2)?))
     })?;
 
     let mut entry_stmt = conn.prepare(
@@ -38,17 +33,20 @@ pub fn get_transaction_v2(
                 EntryType::from_i32(row.get(5)?),
             ))
         })
-        .and_then(|mapped_rows| Ok(mapped_rows.map(|row| row.unwrap()).collect::<Vec<EntryV2>>()))?;
+        .and_then(|mapped_rows| {
+            Ok(mapped_rows
+                .map(|row| row.unwrap())
+                .collect::<Vec<EntryV2>>())
+        })?;
 
     if entries.len() % 2 != 0 {
         panic!("Uneven number of entries. Integrity damaged");
     }
 
-
-   Ok(TransactionV2::new(metadata.0, metadata.1, metadata.2, entries))
-
+    Ok(TransactionV2::new(
+        metadata.0, metadata.1, metadata.2, entries,
+    ))
 }
-
 
 // List database functions
 
@@ -194,6 +192,39 @@ pub fn remove_transaction(
     let tx = con.transaction()?;
 
     tx.execute("DELETE FROM Transactions WHERE id = ?1", params![id])?;
+
+    tx.commit()
+}
+
+pub fn update_transaction(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    transaction_id: i32,
+    balance: i32,
+    name: &str,
+) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+
+    tx.execute(
+        "
+        UPDATE Transactions SET name = ?1 WHERE id = ?2;
+        ",
+        params![name, transaction_id],
+    )?;
+
+    tx.execute(
+        "
+        UPDATE Credits SET balance = ?1 WHERE transaction_id = ?2;
+        ",
+        params![balance, transaction_id],
+    )?;
+
+    tx.execute(
+        "
+        UPDATE Debits SET balance = ?1  WHERE transaction_id = ?2;
+        ",
+        params![balance, transaction_id],
+    )?;
 
     tx.commit()
 }
