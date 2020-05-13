@@ -113,10 +113,37 @@ pub async fn delete_transaction(
 
 // List operations
 // Get all transactions limited to 32
-
 pub async fn list_transactions(
+    query: web::Query<data::DateQuery>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> Result<HttpResponse, Error> {
+    
+    // If query is full we tackle the full query
+    if query.is_full() {
+        let date_result = db::list_transactions_date(pool.get().unwrap(), query.year().unwrap(), query.month().unwrap());
+
+        match date_result {
+            Ok(v) => return Ok(HttpResponse::Ok().json(v)),
+            Err(_e) => return Ok(HttpResponse::InternalServerError().finish()),
+        }
+    }
+
+    if query.only_year() {
+        let year_result = db::list_transactions_year(pool.get().unwrap(), query.year().unwrap());
+
+        match year_result {
+            Ok(v) => return Ok(HttpResponse::Ok().json(v)),
+            Err(_e) => return Ok(HttpResponse::InternalServerError().finish()),
+        }
+    }
+
+    // Specifying only a month is invalid
+    if query.only_month() {
+        return Ok(HttpResponse::BadRequest().finish());
+    }
+    
+
+    // If the query is empty we just list the transactions    
     let result = db::list_transactions(pool.get().unwrap());
 
     match result {

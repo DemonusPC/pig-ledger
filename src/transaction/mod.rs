@@ -54,7 +54,7 @@ pub async fn list_transactions_date_scoped(
         return Ok(HttpResponse::BadRequest().finish());
     }
 
-    let result = db::list_transactions_date(pool.get().unwrap(), params.month, params.year);
+    let result = db::list_transactions_date(pool.get().unwrap(), params.year, params.month);
 
     match result {
         Ok(v) => {
@@ -76,7 +76,7 @@ pub async fn list_transactions_date_scoped_with_details(
         return Ok(HttpResponse::BadRequest().finish());
     }
 
-    let transactions = db::list_transactions_date(pool.get().unwrap(), params.month, params.year);
+    let transactions = db::list_transactions_date(pool.get().unwrap(), params.year, params.month);
 
     if transactions.is_err() {
         error!(

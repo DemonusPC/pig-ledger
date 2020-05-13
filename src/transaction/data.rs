@@ -143,3 +143,44 @@ impl TransactionV2 {
         &self.entries
     }
 }
+
+#[derive(Debug, Deserialize)]
+pub struct DateQuery {
+    year: Option<i32>,
+    month: Option<u8>
+}
+
+impl DateQuery {
+    pub fn year(&self) -> Option<i32> {
+        self.year
+    }
+    pub fn month(&self) -> Option<u8> {
+        self.month
+    }
+
+    pub fn only_year(&self) -> bool {
+        if self.year.is_some() && self.month.is_none(){
+            return true;
+        } 
+
+        false
+    }
+
+    pub fn only_month(&self) -> bool {
+        if self.year.is_none() && self.month.is_some(){
+            return true;
+        }
+
+        false
+    }
+
+    pub fn is_full(&self) -> bool{
+        if self.year.is_some() && self.month.is_some() {
+            return true;
+        }
+
+        false
+    }
+
+
+}

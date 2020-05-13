@@ -53,7 +53,7 @@ pub fn get_transaction_v2(
 pub fn list_transactions(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
 ) -> Result<Vec<Transaction>> {
-    let mut stmt = conn.prepare("SELECT id, date, name from Transactions ORDER BY date DESC")?;
+    let mut stmt = conn.prepare("SELECT id, date, name from Transactions ORDER BY date DESC LIMIT 32")?;
 
     let transactions = stmt
         .query_map(NO_PARAMS, |row| {
@@ -105,8 +105,8 @@ pub fn get_entries_for_transaction(
 
 pub fn list_transactions_date(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    month: u8,
     year: i32,
+    month: u8,
 ) -> Result<Vec<Transaction>> {
     let mut stmt = conn.prepare(
         "SELECT id, date, name from Transactions
@@ -117,6 +117,33 @@ pub fn list_transactions_date(
 
     let transactions = stmt
         .query_map(params![month, year], |row| {
+            Ok(Transaction {
+                id: row.get(0).unwrap(),
+                date: row.get(1).unwrap(),
+                name: row.get(2).unwrap(),
+            })
+        })
+        .and_then(|mapped_rows| {
+            Ok(mapped_rows
+                .map(|row| row.unwrap())
+                .collect::<Vec<Transaction>>())
+        })?;
+
+    Ok(transactions)
+}
+
+pub fn list_transactions_year(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    year: i32,
+) -> Result<Vec<Transaction>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, date, name from Transactions
+        WHERE CAST(strftime('%Y', date) as integer) = ?1 
+        ORDER BY date DESC",
+    )?;
+
+    let transactions = stmt
+        .query_map(params![year], |row| {
             Ok(Transaction {
                 id: row.get(0).unwrap(),
                 date: row.get(1).unwrap(),
