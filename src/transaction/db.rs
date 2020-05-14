@@ -53,7 +53,7 @@ pub fn get_transaction_v2(
 pub fn list_transactions(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
 ) -> Result<Vec<Transaction>> {
-    let mut stmt = conn.prepare("SELECT id, date, name from Transactions ORDER BY date DESC LIMIT 32")?;
+    let mut stmt = conn.prepare("SELECT id, date, name from Transactions ORDER BY date DESC")?;
 
     let transactions = stmt
         .query_map(NO_PARAMS, |row| {
