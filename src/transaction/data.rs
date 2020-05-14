@@ -147,7 +147,7 @@ impl TransactionV2 {
 #[derive(Debug, Deserialize)]
 pub struct DateQuery {
     year: Option<i32>,
-    month: Option<u8>
+    month: Option<u8>,
 }
 
 impl DateQuery {
@@ -158,29 +158,71 @@ impl DateQuery {
         self.month
     }
 
-    pub fn only_year(&self) -> bool {
-        if self.year.is_some() && self.month.is_none(){
-            return true;
-        } 
+    // Returns if the query has a valid date
+    // Returns true if query is empty
+    pub fn valid_date(&self) -> bool {
+        let month: bool = match self.month {
+            Some(v) => {
+                if v < 1 || v > 12 {
+                    return false;
+                }
+                true
+            }
+            None => true,
+        };
 
-        false
-    }
+        let year: bool = match self.year {
+            Some(v) => {
+                if v < 1970 {
+                    return false;
+                }
+                true
+            }
+            None => true,
+        };
 
-    pub fn only_month(&self) -> bool {
-        if self.year.is_none() && self.month.is_some(){
+        if month && year {
             return true;
         }
 
         false
     }
 
-    pub fn is_full(&self) -> bool{
+    pub fn only_year(&self) -> bool {
+        if self.year.is_some() && self.month.is_none() {
+            return true;
+        }
+
+        false
+    }
+
+    pub fn only_month(&self) -> bool {
+        if self.year.is_none() && self.month.is_some() {
+            return true;
+        }
+
+        false
+    }
+
+    pub fn is_full(&self) -> bool {
         if self.year.is_some() && self.month.is_some() {
             return true;
         }
 
         false
     }
+}
 
+#[cfg(test)]
+mod tests {
+    use super::*;
 
+    #[test]
+    fn entry_correctly_types() {
+        let debit = EntryType::from_i32(1);
+        let credit = EntryType::from_i32(0);
+
+        assert_eq!(debit, EntryType::Debit);
+        assert_eq!(credit, EntryType::Credit)
+    }
 }

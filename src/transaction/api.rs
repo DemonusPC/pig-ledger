@@ -9,11 +9,11 @@ use crate::transaction::data;
 use crate::transaction::db;
 
 // Get a single transaction
-pub async fn get_transaction_v2(
+pub async fn get_transaction(
     params: web::Path<datastruct::IdRequest>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> Result<HttpResponse, Error> {
-    let transaction = db::get_transaction_v2(pool.get().unwrap(), params.id);
+    let transaction = db::get_transaction(pool.get().unwrap(), params.id);
 
     match transaction {
         Ok(response) => Ok(HttpResponse::Ok().json(response)),
@@ -25,7 +25,7 @@ pub async fn get_transaction_v2(
 }
 
 // Create a new transaction
-pub async fn create_transaction_v2(
+pub async fn create_transaction(
     transaction: web::Json<data::NewTransaction>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> Result<HttpResponse, Error> {
@@ -66,7 +66,7 @@ pub async fn create_transaction_v2(
 }
 
 // Update Transaction name or balance
-pub async fn update_transaction_v2(
+pub async fn update_transaction(
     params: web::Path<datastruct::IdRequest>,
     transaction: web::Json<data::UpdateTransaction>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
@@ -117,10 +117,17 @@ pub async fn list_transactions(
     query: web::Query<data::DateQuery>,
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> Result<HttpResponse, Error> {
-    
     // If query is full we tackle the full query
     if query.is_full() {
-        let date_result = db::list_transactions_date(pool.get().unwrap(), query.year().unwrap(), query.month().unwrap());
+        if !query.valid_date() {
+            return Ok(HttpResponse::BadRequest().finish());
+        }
+
+        let date_result = db::list_transactions_date(
+            pool.get().unwrap(),
+            query.year().unwrap(),
+            query.month().unwrap(),
+        );
 
         match date_result {
             Ok(v) => return Ok(HttpResponse::Ok().json(v)),
@@ -129,6 +136,10 @@ pub async fn list_transactions(
     }
 
     if query.only_year() {
+        if !query.valid_date() {
+            return Ok(HttpResponse::BadRequest().finish());
+        }
+
         let year_result = db::list_transactions_year(pool.get().unwrap(), query.year().unwrap());
 
         match year_result {
@@ -141,9 +152,8 @@ pub async fn list_transactions(
     if query.only_month() {
         return Ok(HttpResponse::BadRequest().finish());
     }
-    
 
-    // If the query is empty we just list the transactions    
+    // If the query is empty we just list the transactions
     let result = db::list_transactions(pool.get().unwrap());
 
     match result {

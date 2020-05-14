@@ -4,8 +4,9 @@ use rusqlite::{params, Result, NO_PARAMS};
 use chrono::{DateTime, Utc};
 use std::ops::DerefMut;
 
-// V2
-pub fn get_transaction_v2(
+// Single transactions functions
+
+pub fn get_transaction(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
 ) -> Result<TransactionV2> {
@@ -48,6 +49,86 @@ pub fn get_transaction_v2(
     ))
 }
 
+pub fn create_transaction(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    debit_account: i32,
+    credit_account: i32,
+    balance: i32,
+    name: &str,
+) -> Result<i64> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+    let date: DateTime<Utc> = Utc::now();
+
+    tx.execute(
+        "INSERT INTO Transactions (date, name) VALUES (?1, ?2)",
+        params![date, name],
+    )?;
+
+    let transaction_id = tx.last_insert_rowid();
+
+    tx.execute(
+        "INSERT INTO Debits (account, transaction_id, balance) VALUES (?1, ?2, ?3)",
+        params![debit_account, transaction_id, balance],
+    )?;
+    tx.execute(
+        "INSERT INTO Credits (account, transaction_id, balance) VALUES (?1, ?2, ?3)",
+        params![credit_account, transaction_id, balance],
+    )?;
+
+    let transaction_result = tx.commit();
+
+    match transaction_result {
+        Ok(_) => Ok(transaction_id),
+        Err(_) => panic!("Transaction has failed"),
+    }
+}
+
+pub fn update_transaction(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    transaction_id: i32,
+    balance: i32,
+    name: &str,
+) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+
+    tx.execute(
+        "
+        UPDATE Transactions SET name = ?1 WHERE id = ?2;
+        ",
+        params![name, transaction_id],
+    )?;
+
+    tx.execute(
+        "
+        UPDATE Credits SET balance = ?1 WHERE transaction_id = ?2;
+        ",
+        params![balance, transaction_id],
+    )?;
+
+    tx.execute(
+        "
+        UPDATE Debits SET balance = ?1  WHERE transaction_id = ?2;
+        ",
+        params![balance, transaction_id],
+    )?;
+
+    tx.commit()
+}
+
+pub fn remove_transaction(
+    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+    id: i32,
+) -> Result<()> {
+    let con = conn.deref_mut();
+    let tx = con.transaction()?;
+
+    tx.execute("DELETE FROM Transactions WHERE id = ?1", params![id])?;
+
+    tx.commit()
+}
+
 // List database functions
 
 pub fn list_transactions(
@@ -72,6 +153,7 @@ pub fn list_transactions(
     Ok(transactions)
 }
 
+// TODO: I'm keeping this function for now because I might need to reuse the SQL
 pub fn get_entries_for_transaction(
     conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
     id: i32,
@@ -157,103 +239,6 @@ pub fn list_transactions_year(
         })?;
 
     Ok(transactions)
-}
-
-// Single transactions functions
-
-pub fn get_transaction(
-    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    id: i32,
-) -> Result<Transaction> {
-    let mut stmt = conn.prepare("SELECT id, date, name from Transactions WHERE id = ?1")?;
-
-    stmt.query_row(params![id], |row| {
-        Ok(Transaction {
-            id: row.get(0).unwrap(),
-            date: row.get(1).unwrap(),
-            name: row.get(2).unwrap(),
-        })
-    })
-}
-
-pub fn create_transaction(
-    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    debit_account: i32,
-    credit_account: i32,
-    balance: i32,
-    name: &str,
-) -> Result<i64> {
-    let con = conn.deref_mut();
-    let tx = con.transaction()?;
-    let date: DateTime<Utc> = Utc::now();
-
-    tx.execute(
-        "INSERT INTO Transactions (date, name) VALUES (?1, ?2)",
-        params![date, name],
-    )?;
-
-    let transaction_id = tx.last_insert_rowid();
-
-    tx.execute(
-        "INSERT INTO Debits (account, transaction_id, balance) VALUES (?1, ?2, ?3)",
-        params![debit_account, transaction_id, balance],
-    )?;
-    tx.execute(
-        "INSERT INTO Credits (account, transaction_id, balance) VALUES (?1, ?2, ?3)",
-        params![credit_account, transaction_id, balance],
-    )?;
-
-    let transaction_result = tx.commit();
-
-    match transaction_result {
-        Ok(_) => Ok(transaction_id),
-        Err(_) => panic!("Transaction has failed"),
-    }
-}
-
-pub fn remove_transaction(
-    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    id: i32,
-) -> Result<()> {
-    let con = conn.deref_mut();
-    let tx = con.transaction()?;
-
-    tx.execute("DELETE FROM Transactions WHERE id = ?1", params![id])?;
-
-    tx.commit()
-}
-
-pub fn update_transaction(
-    mut conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
-    transaction_id: i32,
-    balance: i32,
-    name: &str,
-) -> Result<()> {
-    let con = conn.deref_mut();
-    let tx = con.transaction()?;
-
-    tx.execute(
-        "
-        UPDATE Transactions SET name = ?1 WHERE id = ?2;
-        ",
-        params![name, transaction_id],
-    )?;
-
-    tx.execute(
-        "
-        UPDATE Credits SET balance = ?1 WHERE transaction_id = ?2;
-        ",
-        params![balance, transaction_id],
-    )?;
-
-    tx.execute(
-        "
-        UPDATE Debits SET balance = ?1  WHERE transaction_id = ?2;
-        ",
-        params![balance, transaction_id],
-    )?;
-
-    tx.commit()
 }
 
 #[cfg(test)]
