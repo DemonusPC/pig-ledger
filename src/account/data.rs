@@ -33,6 +33,15 @@ pub struct Account {
     pub currency: String,
 }
 
+impl Account {
+    pub fn currency_compatible(&self, other: &Account) -> bool {
+        if self.currency != other.currency {
+            return false;
+        }
+        true
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct DetailedAccount {
     pub id: i32,
