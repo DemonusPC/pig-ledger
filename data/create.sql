@@ -54,3 +54,12 @@ CREATE TABLE "BudgetEntries" (
 	FOREIGN KEY("account") REFERENCES "Accounts"("id"),
 	UNIQUE("account", "budget")
 )
+
+CREATE TABLE "AccountsV2" (
+	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	"type"	INTEGER NOT NULL,
+	"name"	TEXT NOT NULL,
+	"balance" INTEGER NOT NULL DEFAULT 0,
+	"currency"	TEXT NOT NULL,
+	FOREIGN KEY("currency") REFERENCES "Currency"("code")
+)

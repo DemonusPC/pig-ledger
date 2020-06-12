@@ -2,6 +2,8 @@ use actix_web::{web, Error, HttpResponse};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
+mod traits;
+mod account;
 pub mod data;
 pub mod db;
 
@@ -83,3 +85,7 @@ pub async fn list_expense_accounts(
         Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
+
+pub use self::account::AccountV2;
+pub use self::data::AccountType;
+pub use self::traits::AccountAble;
