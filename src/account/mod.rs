@@ -90,3 +90,20 @@ pub async fn list_expense_accounts(
 pub use self::account::AccountV2;
 pub use self::data::AccountType;
 pub use self::traits::AccountAble;
+
+pub use self::account_hierarchy::AccountHierarchyStorage;
+
+
+// Accout hierarchies
+pub async fn list_account_hierarchies(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> Result<HttpResponse, Error> {
+    let conn = pool.get().unwrap();
+    let result = db::list_expense_hierarchies(conn);
+
+    
+    match result {
+        Ok(v) => Ok(HttpResponse::Ok().json(v.len())),
+        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
+    }
+}

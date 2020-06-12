@@ -1,15 +1,17 @@
 use crate::account::AccountAble;
-use crate::account::AccountV2;
+use crate::account::AccountType;
+// use serde_derive::{Deserialize, Serialize};
 
-struct AccountHierarchy {
+// #[derive(Serialize)]
+pub struct AccountHierarchy {
     // The parent account
     parent: i32,
     name: String,
-    accounts: Vec<Box<AccountAble>>,
+    accounts: Vec<Box<dyn AccountAble>>,
 }
 
 impl AccountHierarchy {
-    pub fn new(parent: i32, name: String, accounts: Vec<Box<AccountAble>>) -> Self {
+    pub fn new(parent: i32, name: String, accounts: Vec<Box<dyn AccountAble>>) -> Self {
         AccountHierarchy {
             parent,
             name,
@@ -34,6 +36,32 @@ impl AccountAble for AccountHierarchy {
 
     }
 }
+
+// Flat version that we get from the database
+pub struct AccountHierarchyStorage {
+    pub h_id: i32,
+    pub parent: i32,
+    pub name: Option<String>,
+    pub acc_type: Option<AccountType>,
+    pub balance: Option<i32>, 
+    pub currency: Option<String>,
+    pub leaf: bool
+}
+
+impl AccountHierarchyStorage {
+    pub fn new(h_id: i32, parent: i32, name: Option<String>, acc_type: Option<AccountType>, balance: Option<i32>, currency: Option<String>, leaf: bool) -> Self {
+        AccountHierarchyStorage {
+            h_id,
+            parent,
+            name,
+            acc_type,
+            balance,
+            currency,
+            leaf
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -89,7 +117,7 @@ mod tests {
     }
 
     #[test]
-    fn balance_of_two_levelsl() {
+    fn balance_of_two_levels() {
         let window_cleaning = AccountV2::new(
             2,
             AccountType::from_i32(4),
@@ -152,5 +180,58 @@ mod tests {
         let result = home.balance();
 
         assert_eq!(result, 13251)
+    }
+
+    #[test]
+    fn balance_of_two_different_levels() {
+        let restaurant = AccountV2::new(
+            2,
+            AccountType::from_i32(4),
+            String::from("Restaurant"),
+            25000,
+            String::from("GBP"),
+        );
+
+        let walmart = AccountV2::new(
+            2,
+            AccountType::from_i32(4),
+            String::from("Walmart"),
+            5000,
+            String::from("GBP"),
+        );
+        let amazon = AccountV2::new(
+            2,
+            AccountType::from_i32(4),
+            String::from("Amazon Groceries"),
+            59899,
+            String::from("GBP"),
+        );
+
+
+        
+
+
+        let groceries: AccountHierarchy = AccountHierarchy::new(
+            4,
+            String::from("Groceries"),
+            vec![
+                Box::new(walmart),
+                Box::new(amazon),
+            ],
+        );
+
+        let food: AccountHierarchy = AccountHierarchy::new(
+            4,
+            String::from("Cleaning"),
+            vec![
+                Box::new(groceries),
+                Box::new(restaurant),
+            ],
+        );
+
+
+        let result = food.balance();
+
+        assert_eq!(result, 89899)
     }
 }

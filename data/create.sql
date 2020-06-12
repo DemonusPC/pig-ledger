@@ -85,3 +85,22 @@ VALUES (3, 3, 'Revenue', 'XXX');
 INSERT INTO "main"."AccountsV2"
 ("id", "type", "name", "currency")
 VALUES (4, 4, 'Expenses', 'XXX');
+
+
+CREATE TABLE "AssetsHierarchies" (
+	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	"parent"	INTEGER NOT NULL,
+	"child"	INTEGER,
+	"name"	TEXT NOT NULL,
+	"leaf"	INTEGER NOT NULL,
+	FOREIGN KEY("child") REFERENCES "AccountsV2"("id") ON DELETE CASCADE
+)
+
+CREATE TABLE "ExpensestHierarchies" (
+	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	"parent"	INTEGER NOT NULL,
+	"child"	INTEGER,
+	"name"	TEXT NOT NULL,
+	"leaf"	INTEGER NOT NULL,
+	FOREIGN KEY("child") REFERENCES "AccountsV2"("id") ON DELETE CASCADE
+)

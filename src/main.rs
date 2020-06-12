@@ -85,6 +85,9 @@ async fn main() -> io::Result<()> {
                 web::scope("/accounts")
                     .service(web::resource("").route(web::get().to(account::list_accounts)))
                     .service(
+                        web::resource("/h").route(web::get().to(account::list_account_hierarchies)),
+                    )
+                    .service(
                         web::resource("/asset").route(web::get().to(account::list_asset_accounts)),
                     )
                     .service(

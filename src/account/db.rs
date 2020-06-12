@@ -1,6 +1,51 @@
 use crate::account::data::{Account, AccountType, DetailedAccount};
+use crate::account::AccountHierarchyStorage;
 use rusqlite::{params, Result, NO_PARAMS};
 use std::ops::DerefMut;
+
+
+// Account Hierarchies 
+
+// Expense Hierarchies
+
+fn leaf_to_bool(leaf: i32) -> bool {
+    let result  = match leaf {
+        0 => false,
+        1 => true,
+        _ => false
+    };
+
+    result
+}
+
+pub fn list_expense_hierarchies(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+) -> Result<Vec<AccountHierarchyStorage>> {
+    let mut stmt = conn.prepare("SELECT id as h_id, parent, name, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT type from AccountsV2 WHERE id = child) ELSE NULL END) as acc_type, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT name from AccountsV2 WHERE id = child) ELSE NULL END) as acc_name, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT balance from AccountsV2 WHERE id = child) ELSE NULL END) as balance, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT currency from AccountsV2 WHERE id = child) ELSE NULL END) as currency, leaf FROM ExpensestHierarchies ORDER BY name DESC")?;
+
+    let accounts = stmt
+        .query_map(NO_PARAMS, |row| {
+
+            let acc_type: Option<AccountType> = match row.get(3) {
+                Ok(v) => Option::from(AccountType::from_i32(v)),
+                Err(_err) => Option::None
+            };
+
+            let balance: Option<i32> = row.get(5).unwrap();
+            let currency: Option<String> = row.get(6).unwrap();
+
+            Ok(AccountHierarchyStorage::new(row.get(0).unwrap(), row.get(1).unwrap(), row.get(2).unwrap(), acc_type , balance, currency, leaf_to_bool(row.get(7).unwrap()) ))
+        })
+        .and_then(|mapped_rows| {
+            Ok(mapped_rows
+                .map(|row| row.unwrap())
+                .collect::<Vec<AccountHierarchyStorage>>())
+        })?;
+
+    Ok(accounts)
+}
+
+
 
 // Single Account Operations
 
