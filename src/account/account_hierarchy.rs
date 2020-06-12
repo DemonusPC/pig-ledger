@@ -87,4 +87,70 @@ mod tests {
 
         assert_eq!(result, 99250)
     }
+
+    #[test]
+    fn balance_of_two_levelsl() {
+        let window_cleaning = AccountV2::new(
+            2,
+            AccountType::from_i32(4),
+            String::from("Window Cleaning"),
+            10000,
+            String::from("GBP"),
+        );
+
+        let plumbing = AccountV2::new(
+            2,
+            AccountType::from_i32(4),
+            String::from("Plumbing"),
+            0,
+            String::from("GBP"),
+        );
+        let electricity = AccountV2::new(
+            2,
+            AccountType::from_i32(4),
+            String::from("Electricity"),
+            3200,
+            String::from("GBP"),
+        );
+        let gas = AccountV2::new(
+            2,
+            AccountType::from_i32(4),
+            String::from("Gas"),
+            51,
+            String::from("GBP"),
+        );
+
+        
+        let cleaning: AccountHierarchy = AccountHierarchy::new(
+            4,
+            String::from("Cleaning"),
+            vec![
+                Box::new(window_cleaning),
+            ],
+        );
+
+        let repairs: AccountHierarchy = AccountHierarchy::new(
+            4,
+            String::from("Repairs"),
+            vec![
+                Box::new(plumbing),
+                Box::new(electricity),
+                Box::new(gas),
+            ],
+        );
+
+        let home: AccountHierarchy = AccountHierarchy::new(
+            4,
+            String::from("Groceries"),
+            vec![
+                Box::new(cleaning),
+                Box::new(repairs),
+            ],
+        );
+
+
+        let result = home.balance();
+
+        assert_eq!(result, 13251)
+    }
 }
