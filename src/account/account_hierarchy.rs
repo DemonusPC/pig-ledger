@@ -1,22 +1,63 @@
 use crate::account::AccountAble;
 use crate::account::AccountType;
-// use serde_derive::{Deserialize, Serialize};
+use crate::account::AccountV2;
+use serde_derive::{Deserialize, Serialize};
 
-// #[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AccountHierarchy {
+    id: i32,
     // The parent account
     parent: i32,
     name: String,
-    accounts: Vec<Box<dyn AccountAble>>,
+    next: Vec<AccountHierarchy>,
+    account: Option<AccountV2>,
 }
 
 impl AccountHierarchy {
-    pub fn new(parent: i32, name: String, accounts: Vec<Box<dyn AccountAble>>) -> Self {
+    pub fn new(
+        id: i32,
+        parent: i32,
+        name: String,
+        next: Vec<AccountHierarchy>,
+        account: Option<AccountV2>,
+    ) -> Self {
         AccountHierarchy {
+            id,
             parent,
             name,
-            accounts,
+            next,
+            account,
         }
+    }
+
+    pub fn from_account(parent: i32, account: AccountV2) -> Self {
+        AccountHierarchy {
+            id: account.id(),
+            parent,
+            name: String::from(account.name()),
+            next: vec![],
+            account: Option::from(account),
+        }
+    }
+
+    pub fn add_to_accounts(&mut self, item: AccountHierarchy) {
+        self.next.push(item);
+    }
+
+    pub fn accounts(&self) -> &[AccountHierarchy] {
+        &self.next
+    }
+
+    pub fn accounts_mut(&mut self) -> &mut Vec<AccountHierarchy> {
+        &mut self.next
+    }
+
+    pub fn account(&self) -> &Option<AccountV2> {
+        &self.account
+    }
+
+    pub fn account_mut(&mut self) -> &mut Option<AccountV2> {
+        &mut self.account
     }
 }
 
@@ -29,39 +70,101 @@ impl AccountAble for AccountHierarchy {
     fn balance(&self) -> i32 {
         let mut balance = 0;
 
-        for account in &self.accounts {
-            balance += account.balance();
+        match &self.account {
+            Some(acc) => balance += acc.balance(),
+            None => {
+                for account in &self.next {
+                    balance += account.balance();
+                }
+            }
         }
         balance
+    }
 
+    fn id(&self) -> i32 {
+        self.id
     }
 }
 
 // Flat version that we get from the database
+#[derive(Debug)]
 pub struct AccountHierarchyStorage {
     pub h_id: i32,
     pub parent: i32,
     pub name: Option<String>,
+    pub account_id: Option<i32>,
     pub acc_type: Option<AccountType>,
-    pub balance: Option<i32>, 
+    pub acc_name: Option<String>,
+    pub balance: Option<i32>,
     pub currency: Option<String>,
-    pub leaf: bool
+    pub leaf: bool,
 }
 
 impl AccountHierarchyStorage {
-    pub fn new(h_id: i32, parent: i32, name: Option<String>, acc_type: Option<AccountType>, balance: Option<i32>, currency: Option<String>, leaf: bool) -> Self {
+    pub fn new(
+        h_id: i32,
+        parent: i32,
+        name: Option<String>,
+        account_id: Option<i32>,
+        acc_type: Option<AccountType>,
+        acc_name: Option<String>,
+        balance: Option<i32>,
+        currency: Option<String>,
+        leaf: bool,
+    ) -> Self {
         AccountHierarchyStorage {
             h_id,
             parent,
             name,
+            account_id,
             acc_type,
+            acc_name,
             balance,
             currency,
-            leaf
+            leaf,
         }
     }
 }
 
+pub fn into_hierarchy(flat: Vec<AccountHierarchyStorage>) -> AccountHierarchy {
+    let mut expenses = AccountHierarchy::new(4, 4, String::from("Expenses"), vec![], Option::None);
+
+    for r in flat {
+        add_to_hierarchy(&mut expenses, &r);
+    }
+    expenses
+}
+
+// This function will create duplicates since it has no stopping mechanism so it will add multiple account nodes which is bad
+fn add_to_hierarchy(node: &mut AccountHierarchy, flat_account: &AccountHierarchyStorage) {
+    if node.id() == flat_account.parent {
+        if flat_account.leaf {
+            node.add_to_accounts(AccountHierarchy::from_account(
+                flat_account.parent,
+                AccountV2::new(
+                    flat_account.account_id.unwrap(),
+                    flat_account.acc_type.unwrap(),
+                    String::from(flat_account.acc_name.as_ref().unwrap()),
+                    flat_account.balance.unwrap(),
+                    String::from(flat_account.currency.as_ref().unwrap()),
+                ),
+            ))
+        } else {
+            node.add_to_accounts(AccountHierarchy::new(
+                flat_account.h_id,
+                flat_account.parent,
+                String::from(flat_account.name.as_ref().unwrap()),
+                vec![],
+                Option::None,
+            ))
+        };
+        return;
+    }
+
+    for acc in node.accounts_mut() {
+        add_to_hierarchy(acc, flat_account)
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -101,14 +204,16 @@ mod tests {
         );
 
         let groceries: AccountHierarchy = AccountHierarchy::new(
+            8,
             4,
             String::from("Groceries"),
             vec![
-                Box::new(tesco),
-                Box::new(sainsburys),
-                Box::new(walmart),
-                Box::new(amazon),
+                AccountHierarchy::from_account(8, tesco),
+                AccountHierarchy::from_account(8, sainsburys),
+                AccountHierarchy::from_account(8, walmart),
+                AccountHierarchy::from_account(8, amazon),
             ],
+            Option::None,
         );
 
         let result = groceries.balance();
@@ -148,34 +253,33 @@ mod tests {
             String::from("GBP"),
         );
 
-        
         let cleaning: AccountHierarchy = AccountHierarchy::new(
+            8,
             4,
             String::from("Cleaning"),
-            vec![
-                Box::new(window_cleaning),
-            ],
+            vec![],
+            Option::from(window_cleaning),
         );
 
         let repairs: AccountHierarchy = AccountHierarchy::new(
+            9,
             4,
             String::from("Repairs"),
             vec![
-                Box::new(plumbing),
-                Box::new(electricity),
-                Box::new(gas),
+                AccountHierarchy::from_account(9, plumbing),
+                AccountHierarchy::from_account(9, electricity),
+                AccountHierarchy::from_account(9, gas),
             ],
+            Option::None,
         );
 
         let home: AccountHierarchy = AccountHierarchy::new(
+            10,
             4,
             String::from("Groceries"),
-            vec![
-                Box::new(cleaning),
-                Box::new(repairs),
-            ],
+            vec![cleaning, repairs],
+            Option::None,
         );
-
 
         let result = home.balance();
 
@@ -207,28 +311,24 @@ mod tests {
             String::from("GBP"),
         );
 
-
-        
-
-
         let groceries: AccountHierarchy = AccountHierarchy::new(
+            9,
             4,
             String::from("Groceries"),
             vec![
-                Box::new(walmart),
-                Box::new(amazon),
+                AccountHierarchy::from_account(9, walmart),
+                AccountHierarchy::from_account(9, amazon),
             ],
+            Option::None,
         );
 
         let food: AccountHierarchy = AccountHierarchy::new(
+            8,
             4,
             String::from("Cleaning"),
-            vec![
-                Box::new(groceries),
-                Box::new(restaurant),
-            ],
+            vec![groceries, AccountHierarchy::from_account(8, restaurant)],
+            Option::None,
         );
-
 
         let result = food.balance();
 

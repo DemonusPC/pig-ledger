@@ -19,6 +19,10 @@ impl AccountAble for AccountV2 {
     fn name(&self) -> &str {
         &self.name
     }
+
+    fn id(&self) -> i32 {
+        self.id
+    }
 }
 
 impl AccountV2 {

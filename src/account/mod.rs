@@ -93,17 +93,18 @@ pub use self::traits::AccountAble;
 
 pub use self::account_hierarchy::AccountHierarchyStorage;
 
-
 // Accout hierarchies
 pub async fn list_account_hierarchies(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> Result<HttpResponse, Error> {
     let conn = pool.get().unwrap();
-    let result = db::list_expense_hierarchies(conn);
+    let result = db::list_expense_hierarchies(conn).unwrap();
 
-    
-    match result {
-        Ok(v) => Ok(HttpResponse::Ok().json(v.len())),
-        Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
-    }
+    let h = account_hierarchy::into_hierarchy(result);
+
+    Ok(HttpResponse::Ok().json(h))
+    // match result {
+    //     Ok(v) => Ok(HttpResponse::Ok().json(v.len())),
+    //     Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
+    // }
 }
