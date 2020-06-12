@@ -38,6 +38,8 @@ CREATE TABLE "Currency" (
 	PRIMARY KEY("code")
 )
 
+
+
 CREATE TABLE "Budgets" (
 	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	"name"	TEXT,
@@ -63,3 +65,23 @@ CREATE TABLE "AccountsV2" (
 	"currency"	TEXT NOT NULL,
 	FOREIGN KEY("currency") REFERENCES "Currency"("code")
 )
+
+INSERT INTO "main"."AccountsV2"
+("id", "type", "name", "currency")
+VALUES (0, 0, 'Assets', 'XXX');
+
+INSERT INTO "main"."AccountsV2"
+("id", "type", "name", "currency")
+VALUES (1, 1, 'Liabilities', 'XXX');
+
+INSERT INTO "main"."AccountsV2"
+("id", "type", "name", "currency")
+VALUES (2, 2, 'Equities', 'XXX');
+
+INSERT INTO "main"."AccountsV2"
+("id", "type", "name", "currency")
+VALUES (3, 3, 'Revenue', 'XXX');
+
+INSERT INTO "main"."AccountsV2"
+("id", "type", "name", "currency")
+VALUES (4, 4, 'Expenses', 'XXX');

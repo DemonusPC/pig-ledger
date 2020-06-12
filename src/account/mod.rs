@@ -2,10 +2,11 @@ use actix_web::{web, Error, HttpResponse};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
-mod traits;
 mod account;
+mod account_hierarchy;
 pub mod data;
 pub mod db;
+mod traits;
 
 use crate::datastruct;
 

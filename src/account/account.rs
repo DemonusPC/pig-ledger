@@ -1,6 +1,6 @@
 use serde_derive::{Deserialize, Serialize};
 
-use crate::account::{AccountType, AccountAble};
+use crate::account::{AccountAble, AccountType};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AccountV2 {
@@ -8,7 +8,7 @@ pub struct AccountV2 {
     acc_type: AccountType,
     name: String,
     balance: i32,
-    currency: String
+    currency: String,
 }
 
 impl AccountAble for AccountV2 {
@@ -22,13 +22,19 @@ impl AccountAble for AccountV2 {
 }
 
 impl AccountV2 {
-    pub fn new(id: i32, acc_type: AccountType, name: String, balance: i32, currency: String) -> Self {
+    pub fn new(
+        id: i32,
+        acc_type: AccountType,
+        name: String,
+        balance: i32,
+        currency: String,
+    ) -> Self {
         AccountV2 {
             id,
             acc_type,
             name,
             balance,
-            currency
+            currency,
         }
     }
 
@@ -51,8 +57,20 @@ mod tests {
 
     #[test]
     fn matching_currencies_are_compatible() {
-        let acc1 = AccountV2::new(1, AccountType::from_i32(0), String::from("Current Account"), 1000, String::from("GBP"));
-        let acc2 = AccountV2::new(2, AccountType::from_i32(4), String::from("Groceries"), 1000, String::from("GBP"));
+        let acc1 = AccountV2::new(
+            1,
+            AccountType::from_i32(0),
+            String::from("Current Account"),
+            1000,
+            String::from("GBP"),
+        );
+        let acc2 = AccountV2::new(
+            2,
+            AccountType::from_i32(4),
+            String::from("Groceries"),
+            1000,
+            String::from("GBP"),
+        );
 
         let result = acc1.compatible(&acc2);
 
@@ -61,8 +79,20 @@ mod tests {
 
     #[test]
     fn different_currencies_dont_match_accounts() {
-        let acc1 = AccountV2::new(1, AccountType::from_i32(0), String::from("Current Account"), 1000, String::from("GBP"));
-        let acc2 = AccountV2::new(2, AccountType::from_i32(4), String::from("Tesla Stock"), 1000, String::from("TSLA"));
+        let acc1 = AccountV2::new(
+            1,
+            AccountType::from_i32(0),
+            String::from("Current Account"),
+            1000,
+            String::from("GBP"),
+        );
+        let acc2 = AccountV2::new(
+            2,
+            AccountType::from_i32(4),
+            String::from("Tesla Stock"),
+            1000,
+            String::from("TSLA"),
+        );
 
         let result = acc1.compatible(&acc2);
 
