@@ -3,9 +3,9 @@ use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
 mod account;
-mod account_hierarchy;
 pub mod data;
 pub mod db;
+mod hierarchy;
 mod traits;
 
 use crate::datastruct;
@@ -91,7 +91,7 @@ pub use self::account::AccountV2;
 pub use self::data::AccountType;
 pub use self::traits::AccountAble;
 
-pub use self::account_hierarchy::AccountHierarchyStorage;
+pub use self::hierarchy::AccountHierarchyStorage;
 
 // Accout hierarchies
 pub async fn list_account_hierarchies(
@@ -100,7 +100,7 @@ pub async fn list_account_hierarchies(
     let conn = pool.get().unwrap();
     let result = db::list_expense_hierarchies(conn).unwrap();
 
-    let h = account_hierarchy::into_hierarchy(result);
+    let h = hierarchy::into_hierarchy(result);
 
     Ok(HttpResponse::Ok().json(h))
     // match result {

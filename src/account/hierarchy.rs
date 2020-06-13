@@ -139,16 +139,18 @@ pub fn into_hierarchy(flat: Vec<AccountHierarchyStorage>) -> AccountHierarchy {
 fn add_to_hierarchy(node: &mut AccountHierarchy, flat_account: &AccountHierarchyStorage) {
     if node.id() == flat_account.parent {
         if flat_account.leaf {
-            node.add_to_accounts(AccountHierarchy::from_account(
-                flat_account.parent,
-                AccountV2::new(
-                    flat_account.account_id.unwrap(),
-                    flat_account.acc_type.unwrap(),
-                    String::from(flat_account.acc_name.as_ref().unwrap()),
-                    flat_account.balance.unwrap(),
-                    String::from(flat_account.currency.as_ref().unwrap()),
-                ),
-            ))
+            if node.account().is_none() {
+                node.add_to_accounts(AccountHierarchy::from_account(
+                    flat_account.parent,
+                    AccountV2::new(
+                        flat_account.account_id.unwrap(),
+                        flat_account.acc_type.unwrap(),
+                        String::from(flat_account.acc_name.as_ref().unwrap()),
+                        flat_account.balance.unwrap(),
+                        String::from(flat_account.currency.as_ref().unwrap()),
+                    ),
+                ))
+            }
         } else {
             node.add_to_accounts(AccountHierarchy::new(
                 flat_account.h_id,
