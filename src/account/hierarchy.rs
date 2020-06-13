@@ -10,6 +10,7 @@ pub struct AccountHierarchy {
     parent: i32,
     name: String,
     next: Vec<AccountHierarchy>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     account: Option<AccountV2>,
 }
 
@@ -37,6 +38,16 @@ impl AccountHierarchy {
             name: String::from(account.name()),
             next: vec![],
             account: Option::from(account),
+        }
+    }
+
+    pub fn from_account_base(account_type: AccountType) -> Self {
+        AccountHierarchy {
+            id: account_type as i32,
+            parent: account_type as i32,
+            name: account_type.into_string_identifier(),
+            next: vec![],
+            account: Option::None
         }
     }
 
@@ -93,7 +104,7 @@ pub struct AccountHierarchyStorage {
     pub parent: i32,
     pub name: Option<String>,
     pub account_id: Option<i32>,
-    pub acc_type: Option<AccountType>,
+    pub acc_type: AccountType,
     pub acc_name: Option<String>,
     pub balance: Option<i32>,
     pub currency: Option<String>,
@@ -106,7 +117,7 @@ impl AccountHierarchyStorage {
         parent: i32,
         name: Option<String>,
         account_id: Option<i32>,
-        acc_type: Option<AccountType>,
+        acc_type: AccountType,
         acc_name: Option<String>,
         balance: Option<i32>,
         currency: Option<String>,
@@ -126,16 +137,31 @@ impl AccountHierarchyStorage {
     }
 }
 
-pub fn into_hierarchy(flat: Vec<AccountHierarchyStorage>) -> AccountHierarchy {
-    let mut expenses = AccountHierarchy::new(4, 4, String::from("Expenses"), vec![], Option::None);
-
-    for r in flat {
-        add_to_hierarchy(&mut expenses, &r);
-    }
-    expenses
+fn root_hierarchy() -> Vec<AccountHierarchy> {
+    return vec![
+        AccountHierarchy::from_account_base(AccountType::Assets),
+        AccountHierarchy::from_account_base(AccountType::Liabilities),
+        AccountHierarchy::from_account_base(AccountType::Equities),
+        AccountHierarchy::from_account_base(AccountType::Revenue),
+        AccountHierarchy::from_account_base(AccountType::Expenses),
+        AccountHierarchy::from_account_base(AccountType::Gains),
+        AccountHierarchy::from_account_base(AccountType::Losses)
+    ];
 }
 
-// This function will create duplicates since it has no stopping mechanism so it will add multiple account nodes which is bad
+pub fn into_hierarchy(
+    flat: Vec<AccountHierarchyStorage>
+) -> Vec<AccountHierarchy> {
+    
+    let mut root = root_hierarchy();
+
+    for r in flat {
+        add_to_hierarchy(&mut root[r.acc_type as usize], &r);
+    }
+    root
+}
+
+// This doesn't account for hierarchies that are out of order
 fn add_to_hierarchy(node: &mut AccountHierarchy, flat_account: &AccountHierarchyStorage) {
     if node.id() == flat_account.parent {
         if flat_account.leaf {
@@ -144,7 +170,7 @@ fn add_to_hierarchy(node: &mut AccountHierarchy, flat_account: &AccountHierarchy
                     flat_account.parent,
                     AccountV2::new(
                         flat_account.account_id.unwrap(),
-                        flat_account.acc_type.unwrap(),
+                        flat_account.acc_type,
                         String::from(flat_account.acc_name.as_ref().unwrap()),
                         flat_account.balance.unwrap(),
                         String::from(flat_account.currency.as_ref().unwrap()),

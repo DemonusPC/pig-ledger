@@ -98,13 +98,10 @@ pub async fn list_account_hierarchies(
     pool: web::Data<Pool<SqliteConnectionManager>>,
 ) -> Result<HttpResponse, Error> {
     let conn = pool.get().unwrap();
-    let result = db::list_expense_hierarchies(conn).unwrap();
 
-    let h = hierarchy::into_hierarchy(result);
+    let flat_hierarchies = db::list_account_hierarchies(conn).unwrap();
 
-    Ok(HttpResponse::Ok().json(h))
-    // match result {
-    //     Ok(v) => Ok(HttpResponse::Ok().json(v.len())),
-    //     Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
-    // }
+    let result = hierarchy::into_hierarchy(flat_hierarchies);
+
+    Ok(HttpResponse::Ok().json(result))
 }

@@ -23,6 +23,33 @@ impl AccountType {
             _ => panic!("Unknown value: {}", value),
         }
     }
+
+    pub fn into_string_identifier(&self) -> String {
+        match self {
+            AccountType::Assets => String::from("Assets"),
+            AccountType::Liabilities => String::from("Liabilities"),
+            AccountType::Equities => String::from("Equities"),
+            AccountType::Revenue => String::from("Revenue"),
+            AccountType::Expenses => String::from("Expenses"),
+            AccountType::Gains => String::from("Gains"),
+            AccountType::Losses => String::from("Losses"),
+        }
+    }
+}
+
+impl From<i32> for AccountType {
+    fn from(number: i32) -> Self {
+        match number {
+            0 => AccountType::Assets,
+            1 => AccountType::Liabilities,
+            2 => AccountType::Equities,
+            3 => AccountType::Revenue,
+            4 => AccountType::Expenses,
+            5 => AccountType::Gains,
+            6 => AccountType::Losses,
+            _ => panic!("Unknown value: {}", number),
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]

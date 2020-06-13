@@ -17,19 +17,16 @@ fn leaf_to_bool(leaf: i32) -> bool {
     result
 }
 
-pub fn list_expense_hierarchies(
-    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>,
+pub fn list_account_hierarchies(
+    conn: r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>
 ) -> Result<Vec<AccountHierarchyStorage>> {
-    let mut stmt = conn.prepare("SELECT id as h_id, parent, name, child as account_id, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT type from AccountsV2 WHERE id = child) ELSE NULL END) as acc_type, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT name from AccountsV2 WHERE id = child) ELSE NULL END) as acc_name, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT balance from AccountsV2 WHERE id = child) ELSE NULL END) as balance, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT currency from AccountsV2 WHERE id = child) ELSE NULL END) as currency, leaf FROM ExpensestHierarchies ORDER BY name DESC")?;
+    let mut stmt = conn.prepare("SELECT id as h_id, parent, name, child as account_id, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT type from AccountsV2 WHERE id = child) ELSE type END) as acc_type, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT name from AccountsV2 WHERE id = child) ELSE NULL END) as acc_name, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT balance from AccountsV2 WHERE id = child) ELSE NULL END) as balance, (SELECT CASE WHEN child IS NOT NULL THEN (SELECT currency from AccountsV2 WHERE id = child) ELSE NULL END) as currency, leaf FROM AccountHierarchies ORDER BY name DESC")?;
 
     let accounts = stmt
         .query_map(NO_PARAMS, |row| {
             let account_id: Option<i32> = row.get(3).unwrap();
 
-            let acc_type: Option<AccountType> = match row.get(4) {
-                Ok(v) => Option::from(AccountType::from_i32(v)),
-                Err(_err) => Option::None,
-            };
+            let acc_type: i32 = row.get(4).unwrap();
 
             let acc_name: Option<String> = row.get(5).unwrap();
             let balance: Option<i32> = row.get(6).unwrap();
@@ -40,7 +37,7 @@ pub fn list_expense_hierarchies(
                 row.get(1).unwrap(),
                 row.get(2).unwrap(),
                 account_id,
-                acc_type,
+                AccountType::from(acc_type),
                 acc_name,
                 balance,
                 currency,
