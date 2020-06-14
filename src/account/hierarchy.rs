@@ -2,6 +2,7 @@ use crate::account::AccountAble;
 use crate::account::AccountType;
 use crate::account::AccountV2;
 use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AccountHierarchy {
@@ -47,7 +48,7 @@ impl AccountHierarchy {
             parent: account_type as i32,
             name: account_type.into_string_identifier(),
             next: vec![],
-            account: Option::None
+            account: Option::None,
         }
     }
 
@@ -145,24 +146,65 @@ fn root_hierarchy() -> Vec<AccountHierarchy> {
         AccountHierarchy::from_account_base(AccountType::Revenue),
         AccountHierarchy::from_account_base(AccountType::Expenses),
         AccountHierarchy::from_account_base(AccountType::Gains),
-        AccountHierarchy::from_account_base(AccountType::Losses)
+        AccountHierarchy::from_account_base(AccountType::Losses),
     ];
 }
 
-pub fn into_hierarchy(
-    flat: Vec<AccountHierarchyStorage>
-) -> Vec<AccountHierarchy> {
-    
+pub fn into_hierarchy(flat: Vec<AccountHierarchyStorage>) -> Vec<AccountHierarchy> {
     let mut root = root_hierarchy();
 
+    let mut mem: HashMap<i32, Vec<AccountHierarchy>> = HashMap::new();
+
     for r in flat {
-        add_to_hierarchy(&mut root[r.acc_type as usize], &r);
+        let added = add_to_hierarchy(&mut root[r.acc_type as usize], &r, &mut mem);
+
+        if !added {
+            let out_of_order = match &r.leaf {
+                true => AccountHierarchy::from_account(
+                    r.parent,
+                    AccountV2::new(
+                        r.account_id.unwrap(),
+                        r.acc_type,
+                        String::from(r.acc_name.as_ref().unwrap()),
+                        r.balance.unwrap(),
+                        String::from(r.currency.as_ref().unwrap()),
+                    ),
+                ),
+                false => AccountHierarchy::new(
+                    r.h_id,
+                    r.parent,
+                    String::from(r.name.as_ref().unwrap()),
+                    vec![],
+                    Option::None,
+                ),
+            };
+
+            if !mem.contains_key(&r.parent) {
+                mem.insert(r.parent, vec![out_of_order]);
+            } else {
+                mem.get_mut(&r.parent).unwrap().push(out_of_order);
+            }
+        }
     }
+
+    for orphan in mem.into_iter().enumerate() {
+        
+    }
+    
     root
 }
 
 // This doesn't account for hierarchies that are out of order
-fn add_to_hierarchy(node: &mut AccountHierarchy, flat_account: &AccountHierarchyStorage) {
+fn add_to_hierarchy(
+    node: &mut AccountHierarchy,
+    flat_account: &AccountHierarchyStorage,
+    memory: &mut HashMap<i32, Vec<AccountHierarchy>>,
+) -> bool {
+    // We reached an end in this chain
+    if node.account().is_some() {
+        return false;
+    }
+
     if node.id() == flat_account.parent {
         if flat_account.leaf {
             if node.account().is_none() {
@@ -175,23 +217,45 @@ fn add_to_hierarchy(node: &mut AccountHierarchy, flat_account: &AccountHierarchy
                         flat_account.balance.unwrap(),
                         String::from(flat_account.currency.as_ref().unwrap()),
                     ),
-                ))
+                ));
+
+                return true;
             }
         } else {
+            
+            let next = match memory.contains_key(&flat_account.h_id) {
+                true => {
+                    let elements = memory.remove(&flat_account.h_id);
+                    match elements{
+                        Some(v) => v,
+                        None => vec![]
+                    }
+                }
+                false => vec![]
+            };
             node.add_to_accounts(AccountHierarchy::new(
                 flat_account.h_id,
                 flat_account.parent,
                 String::from(flat_account.name.as_ref().unwrap()),
-                vec![],
+                next,
                 Option::None,
-            ))
+            ));
+
+
+            return true;
         };
-        return;
+        return true;
     }
 
+
     for acc in node.accounts_mut() {
-        add_to_hierarchy(acc, flat_account)
+        let found = add_to_hierarchy(acc, flat_account, memory);
+        if found {
+            return true;
+        }
     }
+
+    return false;
 }
 
 #[cfg(test)]
