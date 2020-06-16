@@ -67,10 +67,6 @@ impl AccountHierarchy {
     pub fn account(&self) -> &Option<AccountV2> {
         &self.account
     }
-
-    pub fn account_mut(&mut self) -> &mut Option<AccountV2> {
-        &mut self.account
-    }
 }
 
 impl AccountAble for AccountHierarchy {
@@ -150,7 +146,9 @@ fn root_hierarchy() -> Vec<AccountHierarchy> {
     ];
 }
 
+// Quite inefficient but it works
 pub fn into_hierarchy(flat: Vec<AccountHierarchyStorage>) -> Vec<AccountHierarchy> {
+    // println!("{:?}", flat);
     let mut root = root_hierarchy();
 
     let mut mem: HashMap<i32, Vec<AccountHierarchy>> = HashMap::new();
@@ -158,6 +156,8 @@ pub fn into_hierarchy(flat: Vec<AccountHierarchyStorage>) -> Vec<AccountHierarch
     for r in flat {
         let added = add_to_hierarchy(&mut root[r.acc_type as usize], &r, &mut mem);
 
+        // If it hasn't been added it means that the flat hierarchy came out of order from its parent
+        // Since it's parent doesn't exist yet it gets put into memory
         if !added {
             let out_of_order = match &r.leaf {
                 true => AccountHierarchy::from_account(
@@ -182,13 +182,20 @@ pub fn into_hierarchy(flat: Vec<AccountHierarchyStorage>) -> Vec<AccountHierarch
             if !mem.contains_key(&r.parent) {
                 mem.insert(r.parent, vec![out_of_order]);
             } else {
+                // Each item added should technically be unique so we store it in a vec
                 mem.get_mut(&r.parent).unwrap().push(out_of_order);
             }
         }
     }
 
+    // Any accounts that have not been added are added to the top level accounts
     for orphan in mem.into_iter().enumerate() {
-        
+        let hier = (orphan.1).1;
+        for h in hier {
+            if h.account.is_some() {
+                &mut root[h.account.as_ref().unwrap().account_type() as usize].add_to_accounts(h);
+            }
+        }
     }
     
     root
@@ -223,6 +230,7 @@ fn add_to_hierarchy(
             }
         } else {
             
+            // This doesn't deal with the orphans recursively. So some elements will not be added properly
             let next = match memory.contains_key(&flat_account.h_id) {
                 true => {
                     let elements = memory.remove(&flat_account.h_id);
@@ -425,5 +433,97 @@ mod tests {
         let result = food.balance();
 
         assert_eq!(result, 89899)
+    }
+
+    #[test]
+    fn empty_hierarchy_produces_top_level_only(){
+        let input : Vec<AccountHierarchyStorage> = vec![];
+
+        let result = into_hierarchy(input);
+
+        assert_eq!(result.len(), 7)
+
+    }
+
+    #[test]
+    fn flat() {
+        // Assets 
+        // -> General 
+        // Expenses
+        // -> Tesco
+        // Revenue
+        // -> Salary
+
+        let input : Vec<AccountHierarchyStorage> = vec![
+            AccountHierarchyStorage::new(8, 0, Option::None , Option::from(8), AccountType::Assets, Option::from(String::from("General")), Option::from(10000), Option::from(String::from("GBP")), true),
+            AccountHierarchyStorage::new(9, 4, Option::None , Option::from(9), AccountType::Expenses, Option::from(String::from("Tesco")), Option::from(500), Option::from(String::from("GBP")), true),
+            AccountHierarchyStorage::new(10, 3, Option::None , Option::from(10), AccountType::Revenue, Option::from(String::from("Salary")), Option::from(0), Option::from(String::from("GBP")), true)
+        ];
+
+        let result = into_hierarchy(input);
+
+        assert_eq!(result[0].accounts().len(), 1);
+        assert_eq!(result[0].accounts()[0].account().as_ref().unwrap().id(), 8);
+        assert_eq!(result[4].accounts().len(), 1);
+        assert_eq!(result[4].accounts()[0].account().as_ref().unwrap().id(), 9);
+        assert_eq!(result[3].accounts().len(), 1);
+        assert_eq!(result[3].accounts()[0].account().as_ref().unwrap().id(), 10);
+
+        assert_eq!(result[0].balance(), 10000);
+        assert_eq!(result[4].balance(), 500);
+        assert_eq!(result[3].balance(), 0);
+
+    } 
+
+    #[test]
+    fn multi_layer() {
+        // There are multiple layers. 
+        // We always assume that top level hierarchies come first and leafs (accounts) come in last
+
+        // Assets
+        // -> Stocks
+        //    -> NASDAQ
+        //       -> TSLA
+        //    -> FTSE
+        //       -> OCDO
+        // -> Current
+        // Expenses
+        // -> Food
+        //    -> Chain
+        //       -> Groceries
+        //          -> Tesco
+
+        let input : Vec<AccountHierarchyStorage> = vec![
+            AccountHierarchyStorage::new(13, 4, Option::from(String::from("Food")) , Option::None, AccountType::Expenses, Option::None, Option::None, Option::None, false),
+            AccountHierarchyStorage::new(7, 0, Option::from(String::from("Stocks")) , Option::None, AccountType::Assets, Option::None, Option::None, Option::None, false),
+            AccountHierarchyStorage::new(8, 7, Option::from(String::from("NASDAQ")) , Option::None, AccountType::Assets, Option::None, Option::None, Option::None, false),
+            AccountHierarchyStorage::new(14, 13, Option::from(String::from("Chain")) , Option::None, AccountType::Expenses, Option::None, Option::None, Option::None, false),
+            AccountHierarchyStorage::new(15, 14, Option::from(String::from("Groceries")) , Option::None, AccountType::Expenses, Option::None, Option::None, Option::None, false),
+            AccountHierarchyStorage::new(10, 7, Option::from(String::from("FTSE")) , Option::None, AccountType::Assets, Option::None, Option::None, Option::None, false),
+
+
+            AccountHierarchyStorage::new(16, 8, Option::None , Option::from(9), AccountType::Assets, Option::from(String::from("Tesla Shares")), Option::from(5), Option::from(String::from("TSLA")), true),
+            AccountHierarchyStorage::new(17, 10, Option::None , Option::from(11), AccountType::Assets, Option::from(String::from("Ocado Shares")), Option::from(1), Option::from(String::from("OCDO")), true),
+            AccountHierarchyStorage::new(18, 0, Option::None , Option::from(12), AccountType::Assets, Option::from(String::from("Current Account")), Option::from(550000), Option::from(String::from("GPB")), true),
+            AccountHierarchyStorage::new(19, 15, Option::None , Option::from(16), AccountType::Expenses, Option::from(String::from("Tesco")), Option::from(500), Option::from(String::from("GBP")), true),
+        ];
+
+        let result = into_hierarchy(input);
+        
+        // Assets have two nodes
+        assert_eq!(result[0].accounts().len(), 2);
+        // Expenses has one
+        assert_eq!(result[4].accounts().len(), 1);
+
+        println!("{:?}" , &result[4]);
+
+        // Tesco is correctly chained
+        let tesco = result[4].accounts()[0].accounts()[0].accounts()[0].accounts()[0].account().as_ref().unwrap();
+
+        
+        // Checking that the Tesco account that is deep in the chain is correctly placed
+        assert_eq!(tesco.id(), 16); 
+        assert_eq!(tesco.name(), "Tesco");
+        assert_eq!(tesco.balance(), 500);
     }
 }

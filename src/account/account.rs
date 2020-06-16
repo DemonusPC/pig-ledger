@@ -42,6 +42,10 @@ impl AccountV2 {
         }
     }
 
+    pub fn account_type(&self) -> AccountType {
+        self.acc_type
+    }
+
     pub fn currency(&self) -> &str {
         &self.currency
     }
