@@ -2,8 +2,11 @@ use actix_web::{web, Error, HttpResponse};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
+mod account;
 pub mod data;
 pub mod db;
+mod hierarchy;
+mod traits;
 
 use crate::datastruct;
 
@@ -82,4 +85,23 @@ pub async fn list_expense_accounts(
         Ok(v) => Ok(HttpResponse::Ok().json(v)),
         Err(_e) => Ok(HttpResponse::InternalServerError().finish()),
     }
+}
+
+pub use self::account::AccountV2;
+pub use self::data::AccountType;
+pub use self::traits::AccountAble;
+
+pub use self::hierarchy::AccountHierarchyStorage;
+
+// Accout hierarchies
+pub async fn list_account_hierarchies(
+    pool: web::Data<Pool<SqliteConnectionManager>>,
+) -> Result<HttpResponse, Error> {
+    let conn = pool.get().unwrap();
+
+    let flat_hierarchies = db::list_account_hierarchies(conn).unwrap();
+
+    let result = hierarchy::into_hierarchy(flat_hierarchies);
+
+    Ok(HttpResponse::Ok().json(result))
 }

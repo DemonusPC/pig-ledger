@@ -38,6 +38,8 @@ CREATE TABLE "Currency" (
 	PRIMARY KEY("code")
 )
 
+
+
 CREATE TABLE "Budgets" (
 	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	"name"	TEXT,
@@ -53,4 +55,44 @@ CREATE TABLE "BudgetEntries" (
 	FOREIGN KEY("budget") REFERENCES "Budgets"("id") ON DELETE CASCADE,
 	FOREIGN KEY("account") REFERENCES "Accounts"("id"),
 	UNIQUE("account", "budget")
+)
+
+CREATE TABLE "AccountsV2" (
+	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	"type"	INTEGER NOT NULL,
+	"name"	TEXT NOT NULL,
+	"balance" INTEGER NOT NULL DEFAULT 0,
+	"currency"	TEXT NOT NULL,
+	FOREIGN KEY("currency") REFERENCES "Currency"("code")
+)
+
+INSERT INTO "main"."AccountsV2"
+("id", "type", "name", "currency")
+VALUES (0, 0, 'Assets', 'XXX');
+
+INSERT INTO "main"."AccountsV2"
+("id", "type", "name", "currency")
+VALUES (1, 1, 'Liabilities', 'XXX');
+
+INSERT INTO "main"."AccountsV2"
+("id", "type", "name", "currency")
+VALUES (2, 2, 'Equities', 'XXX');
+
+INSERT INTO "main"."AccountsV2"
+("id", "type", "name", "currency")
+VALUES (3, 3, 'Revenue', 'XXX');
+
+INSERT INTO "main"."AccountsV2"
+("id", "type", "name", "currency")
+VALUES (4, 4, 'Expenses', 'XXX');
+
+
+CREATE TABLE "AccountHierarchies" (
+	"id"	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	"type"	INTEGER NOT NULL,
+	"parent"	INTEGER NOT NULL,
+	"child"	INTEGER,
+	"name"	TEXT NOT NULL,
+	"leaf"	INTEGER NOT NULL,
+	FOREIGN KEY("child") REFERENCES "AccountsV2"("id") ON DELETE CASCADE
 )

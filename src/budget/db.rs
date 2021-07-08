@@ -88,7 +88,7 @@ pub fn check_if_budget_exists(
         .unwrap();
 
     if result.value == 0 {
-        return Ok(false);
+        Ok(false)
     } else {
         Ok(true)
     }
